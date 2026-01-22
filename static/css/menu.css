@@ -869,3 +869,41 @@ body.dark #content nav .profile-menu li a {
         min-width: 420px;
     }
 }
+
+/* --- AJUSTES PARA EL LOGO DE IMAGEN --- */
+
+/* Hacemos espacio para que la imagen y el texto no se peguen */
+#sidebar .brand {
+    gap: 10px;
+}
+
+/* Controlamos el tamaño de la imagen del logo */
+.brand-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-left: 10px;
+    display: block;
+}
+
+/* Ajuste fino para que el texto quede centrado verticalmente con el logo */
+#sidebar .brand .text {
+    line-height: 1;
+    margin-top: 4px;
+    /* Pequeño ajuste si el texto se ve muy arriba */
+}
+
+/* --- ESTILOS CUANDO EL SIDEBAR ESTÁ OCULTO (COLLAPSED) --- */
+
+/* Ocultar el texto "Nextprint" */
+#sidebar.hide .brand .text {
+    display: none;
+}
+
+/* Agrandar un poco el logo */
+#sidebar.hide .brand .brand-logo {
+    width: 45px;
+    height: 45px;
+    transition: all 0.3s ease;
+}

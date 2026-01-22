@@ -1,32 +1,59 @@
-<ul class="theme-picker">
-    <li data-theme="barney" class="barney"></li>
-    <li data-theme="firewatch" class="firewatch"></li>
-    <li data-theme="citrus" class="citrus"></li>
-    <li data-theme="marsh" class="marsh"></li>
-    <li data-theme="frost" class="frost"></li>
-    <li data-theme="slate" class="slate"></li>
-    <li data-theme="candy" class="candy"></li>
-</ul>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
 
-<form class="form" method="POST">
-    {% csrf_token %}
-    <h1>Welcome Back</h1>
-    <p>Enter your credentials to continue.</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Compras</title>
 
-    <div class="input-wrapper">
-        <input type="text" name="username" placeholder="Enter your username" />
-        <i class="bx bxs-user-circle"></i>
-    </div>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
-    <div class="input-wrapper">
-        <input type="password" name="password" placeholder="Enter your password" />
-        <i class="bx bx-key"></i>
-    </div>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
 
-    <div class="button-wrapper">
-        <button type="submit">
-            Sign In
-            <i class="bx bx-right-arrow-alt"></i>
-        </button>
-    </div>
-</form>
+<body>
+
+    <ul class="theme-picker">
+        <li data-theme="barney" class="barney"></li>
+        <li data-theme="firewatch" class="firewatch"></li>
+        <li data-theme="citrus" class="citrus"></li>
+        <li data-theme="marsh" class="marsh"></li>
+        <li data-theme="frost" class="frost"></li>
+        <li data-theme="slate" class="slate"></li>
+        <li data-theme="candy" class="candy"></li>
+    </ul>
+
+    <form class="form" method="POST">
+        {% csrf_token %}
+        <h1>Bienvenido</h1>
+        <p>Ingresa tus credenciales.</p>
+
+        <div class="input-wrapper">
+            <input type="text" name="username" placeholder="Usuario" required />
+            <i class="bx bxs-user-circle"></i>
+        </div>
+
+        <div class="input-wrapper">
+            <input type="password" name="password" placeholder="Contraseña" required />
+            <i class="bx bx-key"></i>
+        </div>
+
+        <div class="button-wrapper">
+            <button type="submit">
+                Ingresar
+                <i class="bx bx-right-arrow-alt"></i>
+            </button>
+        </div>
+
+        {% if error %}
+        <p style="color: white; background: red; padding: 5px; border-radius: 5px; margin-top: 10px;">
+            {{ error }}
+        </p>
+        {% endif %}
+    </form>
+
+    <script src="{% static 'js/login.js' %}"></script>
+</body>
+
+</html>

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 
 def login_view(request):
     if request.method == 'POST':
@@ -27,3 +28,7 @@ def login_view(request):
 @login_required(login_url='/') 
 def dashboard_view(request):
     return render(request, 'core/dashboard.html')
+
+def logout_view(request):
+    logout(request) # Cierra la sesión
+    return redirect('login') # Lo manda a la pantalla de entrada

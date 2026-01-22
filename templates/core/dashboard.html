@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="head-title">
+    <div class="left">
+        <h1>Dashboard</h1>
+        <ul class="breadcrumb">
+            <li><a href="#">Dashboard</a></li>
+            <li><i class='bx bx-chevron-right'></i></li>
+            <li><a class="active" href="#">Inicio</a></li>
+        </ul>
+    </div>
+</div>
+
+<ul class="box-info">
+    <li>
+        <i class='bx bxs-calendar-check'></i>
+        <span class="text">
+            <h3>1020</h3>
+            <p>Nuevas Ordenes</p>
+        </span>
+    </li>
+    <li>
+        <i class='bx bxs-group'></i>
+        <span class="text">
+            <h3>2834</h3>
+            <p>Proveedores</p>
+        </span>
+    </li>
+    <li>
+        <i class='bx bxs-dollar-circle'></i>
+        <span class="text">
+            <h3>$2543.00</h3>
+            <p>Gastos Totales</p>
+        </span>
+    </li>
+</ul>
+
+<div class="table-data">
+    <div class="order">
+        <div class="head">
+            <h3>Ordenes Recientes</h3>
+            <i class='bx bx-search'></i>
+            <i class='bx bx-filter'></i>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <p>Juan Perez</p>
+                    </td>
+                    <td>01-10-2025</td>
+                    <td><span class="status completed">Aprobado</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>Maria Garcia</p>
+                    </td>
+                    <td>02-10-2025</td>
+                    <td><span class="status pending">Pendiente</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
