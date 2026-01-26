@@ -29,13 +29,16 @@ li {
     --light-yellow: #FFF2C6;
     --orange: #FD7238;
     --light-orange: #FFE0D3;
+    --green: #2ecc71;
+    --light-green: #d5f5e3;
 }
 
 html {
     overflow-x: hidden;
 }
 
-body.dark {
+body.dark,
+html.dark {
     --light: #0C0C1E;
     --grey: #060714;
     --dark: #FBFBFB;
@@ -355,14 +358,24 @@ body {
     color: var(--light);
 }
 
-body.dark #content nav .notification-menu li:hover {
+body.dark #content nav .notification-menu li:hover,
+html.dark #content nav .notification-menu li:hover {
     background-color: var(--light-blue);
     color: var(--light);
 }
 
-body.dark #content nav .notification-menu li a {
+body.dark #content nav .notification-menu li a,
+html.dark #content nav .notification-menu li a {
     background-color: var(--dark-grey);
     color: var(--light);
+}
+
+/* Profile container in navbar */
+#content nav .profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
 }
 
 #content nav .profile img {
@@ -406,11 +419,13 @@ body.dark #content nav .notification-menu li a {
     font-size: 16px;
 }
 
-body.dark #content nav .profile-menu li:hover a {
+body.dark #content nav .profile-menu li:hover a,
+html.dark #content nav .profile-menu li:hover a {
     color: var(--light);
 }
 
-body.dark #content nav .profile-menu li a {
+body.dark #content nav .profile-menu li a,
+html.dark #content nav .profile-menu li a {
     color: var(--dark);
 }
 
@@ -590,8 +605,8 @@ body.dark #content nav .profile-menu li a {
 }
 
 #content main .box-info li:nth-child(2) .bx {
-    background: var(--light-yellow);
-    color: var(--yellow);
+    background: var(--light-green);
+    color: var(--green);
 }
 
 #content main .box-info li:nth-child(3) .bx {
@@ -906,4 +921,322 @@ body.dark #content nav .profile-menu li a {
     width: 45px;
     height: 45px;
     transition: all 0.3s ease;
+}
+
+/* --- NUEVA COMPRA SELECTION --- */
+.content-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.selection-container {
+    padding: 24px;
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.selection-container h2 {
+    font-size: 28px;
+    margin-bottom: 40px;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+.options-wrapper {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.selection-card {
+    background: var(--light);
+    width: 250px;
+    height: 300px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    color: var(--dark);
+    border: 2px solid transparent;
+}
+
+.selection-card .bx {
+    font-size: 80px;
+    color: var(--dark-grey);
+    transition: all 0.3s ease;
+}
+
+.selection-card h3 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.selection-card p {
+    font-size: 14px;
+    color: var(--dark-grey);
+    padding: 0 20px;
+}
+
+/* Hover Effects */
+.selection-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.paper-card:hover {
+    border-color: var(--blue);
+}
+
+.paper-card:hover .bx {
+    color: var(--blue);
+}
+
+.insumo-card:hover {
+    border-color: var(--orange);
+}
+
+.insumo-card:hover .bx {
+    color: var(--orange);
+}
+
+/* --- FORMULARIO INSUMO --- */
+.insumo-form {
+    background: var(--light);
+    padding: 30px;
+    border-radius: 20px;
+    margin-top: 20px;
+    position: relative;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.card-input {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card-input.full-width {
+    grid-column: span 3;
+}
+
+.card-input label {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.input-box {
+    display: flex;
+    align-items: center;
+    background: var(--grey);
+    padding: 12px 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.input-box:focus-within {
+    box-shadow: 0 0 0 2px var(--blue);
+    background: #fff;
+}
+
+.input-box:focus-within input,
+.input-box:focus-within textarea {
+    color: #342E37;
+    /* Force dark text on white focus background */
+}
+
+.input-box .bx {
+    font-size: 20px;
+    color: var(--dark-grey);
+    margin-right: 12px;
+}
+
+.input-box input,
+.input-box textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--dark);
+    font-family: var(--poppins);
+}
+
+.input-box textarea {
+    resize: none;
+    height: 80px;
+    padding-top: 5px;
+}
+
+.btn-confirm {
+    float: right;
+    background: var(--blue);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-family: var(--poppins);
+}
+
+.btn-confirm:hover {
+    background: #2b7bc4;
+    transform: scale(1.05);
+}
+
+/* --- POPUP & BLUR --- */
+.blur-active {
+    filter: blur(5px);
+    pointer-events: none;
+    transition: filter 0.3s ease;
+}
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.popup-content {
+    background: var(--light);
+    padding: 40px;
+    border-radius: 25px;
+    text-align: center;
+    width: 400px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.popup-overlay.active .popup-content {
+    transform: scale(1);
+}
+
+.icon-checkmark {
+    width: 80px;
+    height: 80px;
+    background: var(--green);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon-checkmark .bx {
+    font-size: 50px;
+    color: white;
+}
+
+.popup-content h2 {
+    margin-bottom: 10px;
+    color: var(--dark);
+}
+
+.popup-content p {
+    color: var(--dark-grey);
+    margin-bottom: 30px;
+}
+
+.btn-order {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background: var(--dark);
+    color: var(--light);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-order:hover {
+    background: #1a1a1a;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark-grey);
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    margin-left: auto;
+    /* Push to right? No, corner requested */
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+.btn-back:hover {
+    background: var(--grey);
+    color: var(--dark);
+}
+
+/* Fix popup positioning for button */
+.popup-content {
+    position: relative;
+    padding-bottom: 70px;
+}
+
+/* Responsiveness for new pages */
+@media screen and (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+
+    .card-input.full-width {
+        grid-column: span 1;
+    }
+
+    .btn-confirm {
+        width: 100%;
+        justify-content: center;
+    }
 }

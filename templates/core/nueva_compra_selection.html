@@ -1,0 +1,28 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="head-title">
+    <div class="left">
+        <h1>Nueva Compra</h1>
+    </div>
+</div>
+
+<div class="selection-container">
+    <h2>¿Qué deseas comprar?</h2>
+
+    <div class="options-wrapper">
+        <!-- Opción Papel -->
+        <a href="{% url 'compra_papel' %}" style="text-decoration: none;">
+            <div class="selection-card paper-card">
+                <i class='bx bxs-file-blank'></i>
+                <h3>Papel</h3>
+            </div>
+        </a>
+        <a href="{% url 'compra_insumo' %}" class="selection-card insumo-card">
+            <i class='bx bxs-cart-alt'></i>
+            <h3>Insumo</h3>
+        </a>
+    </div>
+</div>
+{% endblock %}

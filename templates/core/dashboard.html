@@ -1,37 +1,26 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="head-title">
     <div class="left">
-        <h1>Dashboard</h1>
-        <ul class="breadcrumb">
-            <li><a href="#">Dashboard</a></li>
-            <li><i class='bx bx-chevron-right'></i></li>
-            <li><a class="active" href="#">Inicio</a></li>
-        </ul>
+        <h1>Menu</h1>
     </div>
 </div>
 
 <ul class="box-info">
     <li>
-        <i class='bx bxs-calendar-check'></i>
+        <i class='bx bx-money'></i>
         <span class="text">
-            <h3>1020</h3>
-            <p>Nuevas Ordenes</p>
+            <h3>${{ dolar.compra }}</h3>
+            <p>Dólar Oficial Compra</p>
         </span>
     </li>
     <li>
-        <i class='bx bxs-group'></i>
+        <i class='bx bx-money'></i>
         <span class="text">
-            <h3>2834</h3>
-            <p>Proveedores</p>
-        </span>
-    </li>
-    <li>
-        <i class='bx bxs-dollar-circle'></i>
-        <span class="text">
-            <h3>$2543.00</h3>
-            <p>Gastos Totales</p>
+            <h3>${{ dolar.venta }}</h3>
+            <p>Dólar Oficial Venta</p>
         </span>
     </li>
 </ul>
@@ -40,32 +29,30 @@
     <div class="order">
         <div class="head">
             <h3>Ordenes Recientes</h3>
-            <i class='bx bx-search'></i>
-            <i class='bx bx-filter'></i>
         </div>
         <table>
             <thead>
                 <tr>
                     <th>Usuario</th>
                     <th>Fecha</th>
-                    <th>Estado</th>
+                    <th>Producto</th>
                 </tr>
             </thead>
             <tbody>
+                {% for order in recent_orders %}
                 <tr>
                     <td>
-                        <p>Juan Perez</p>
+                        <img src="{% static 'img/people.png' %}" alt="User">
+                        <p>{{ order.pedido_por }}</p>
                     </td>
-                    <td>01-10-2025</td>
-                    <td><span class="status completed">Aprobado</span></td>
+                    <td>{{ order.fecha|date:"d-m-Y" }}</td>
+                    <td><span class="status completed">{{ order.insumo }}</span></td>
                 </tr>
+                {% empty %}
                 <tr>
-                    <td>
-                        <p>Maria Garcia</p>
-                    </td>
-                    <td>02-10-2025</td>
-                    <td><span class="status pending">Pendiente</span></td>
+                    <td colspan="3" style="text-align: center;">No hay ordenes recientes.</td>
                 </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

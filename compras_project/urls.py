@@ -3,17 +3,20 @@ from django.contrib import admin
 from django.urls import path
 from core import views
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', views.login_view, name='login'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),
-]
+
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.login_view, name='login'),
+    path('', views.login_view, name='login'), # Ruta raíz
     path('dashboard/', views.dashboard_view, name='dashboard'),
-    
-    # AGREGA ESTA LÍNEA:
     path('logout/', views.logout_view, name='logout'),
+    path('nueva-compra/', views.nueva_compra_view, name='nueva_compra'),
+    path('nueva-compra/insumo/', views.compra_insumo_view, name='compra_insumo'),
+    path('nueva-compra/papel/', views.compra_papel_view, name='compra_papel'),
+    path('registrar-compra/', views.registrar_compra, name='registrar_compra'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

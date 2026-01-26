@@ -6,8 +6,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="{% static 'css/menu.css' %}">
+    <link rel="stylesheet" href="{% static 'css/menu.css' %}?v=2">
     <title>Sistema Compras</title>
+    <script>
+        // Check dark mode immediately to prevent flash
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark'); // Apply to html or body
+            // We can't access body safely in head, so we often use documentElement or wait for body
+            // However, class 'dark' is on body in CSS.
+            // Best practice: add to documentElement (html tag) and update CSS to support both, 
+            // OR use a blocking script in body.
+            // Given the CSS uses body.dark, we should try to add it to body as soon as possible.
+            // Let's add an early script right after body open if possible, or use DOMContentLoaded for the switch but apply class here if we can target html?
+            // Checking CSS: body.dark { ... }
+            // Let's update CSS to support html.dark as well OR just wait for body.
+            // Actually, simplest is to put this script right inside <body> start.
+        }
+    </script>
 </head>
 
 <body>
@@ -19,14 +34,15 @@
             <span class="text">Nextprint</span>
         </a>
         <ul class="side-menu top">
-            <li class="active">
+            <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <a href="{% url 'dashboard' %}">
                     <i class='bx bxs-dashboard bx-sm'></i>
                     <span class="text">Inicio</span>
                 </a>
             </li>
-            <li>
-                <a href="#">
+            <li
+                class="{% if request.resolver_match.url_name == 'nueva_compra' or request.resolver_match.url_name == 'compra_insumo' %}active{% endif %}">
+                <a href="{% url 'nueva_compra' %}">
                     <i class='bx bxs-shopping-bag-alt bx-sm'></i>
                     <span class="text">Nueva Compra</span>
                 </a>
@@ -57,7 +73,7 @@
     <section id="content">
         <nav>
             <i class='bx bx-menu bx-sm'></i>
-            <a href="#" class="nav-link">Categorías</a>
+
             <form action="#">
                 <div class="form-input">
                     <input type="search" placeholder="Buscar...">
@@ -70,6 +86,10 @@
                 <i class="bx bx-sun"></i>
                 <div class="ball"></div>
             </label>
+            <a href="#" class="profile">
+                <span style="margin-right: 10px; font-weight: 600; color: var(--dark);">{{ user.first_name }}</span>
+                <img src="{{ user.profile.image.url }}" alt="Profile">
+            </a>
         </nav>
 
         <main>
@@ -78,7 +98,7 @@
         </main>
     </section>
 
-    <script src="{% static 'js/menu.js' %}"></script>
+    <script src="{% static 'js/menu.js' %}?v=2"></script>
 </body>
 
 </html>

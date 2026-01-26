@@ -1,0 +1,142 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="content-container">
+    <div class="head-title">
+        <div class="left">
+            <h1>Compra de Insumo</h1>
+        </div>
+    </div>
+
+    <form class="insumo-form">
+        <div class="grid-container">
+            <!-- 1. Insumo (Moved to start) -->
+            <div class="card-input">
+                <label>Insumo</label>
+                <div class="input-box">
+                    <i class='bx bxs-box'></i>
+                    <input type="text" placeholder="Ej: Toner Negro" required>
+                </div>
+            </div>
+
+            <!-- 3. Proveedor -->
+            <div class="card-input">
+                <label>Proveedor</label>
+                <div class="input-box">
+                    <i class='bx bxs-store'></i>
+                    <input type="text" placeholder="Empresa proveedora" required>
+                </div>
+            </div>
+
+            <!-- 4. Marca -->
+            <div class="card-input">
+                <label>Marca</label>
+                <div class="input-box">
+                    <i class='bx bxs-tag'></i>
+                    <input type="text" placeholder="Ej: HP, Epson" required>
+                </div>
+            </div>
+
+            <!-- 5. Precio -->
+            <div class="card-input">
+                <label>Precio</label>
+                <div class="input-box">
+                    <i class='bx bxs-dollar-circle'></i>
+                    <input type="number" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <!-- 6. Observaciones -->
+            <div class="card-input full-width">
+                <label>Observaciones</label>
+                <div class="input-box">
+                    <i class='bx bxs-notepad'></i>
+                    <textarea placeholder="Detalles adicionales..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-confirm" onclick="showPopup()">
+            Confirmar
+            <i class='bx bx-check'></i>
+        </button>
+    </form>
+</div>
+
+<!-- POPUP -->
+<div id="success-popup" class="popup-overlay">
+    <div class="popup-content">
+        <div class="icon-checkmark">
+            <i class='bx bx-check'></i>
+        </div>
+        <h2>Compra Exitosa</h2>
+        <p>La orden ha sido registrada correctamente.</p>
+
+        <button class="btn-order">Orden de compra</button>
+
+        <a href="{% url 'nueva_compra' %}" class="btn-back">
+            Volver
+            <i class='bx bx-undo'></i>
+        </a>
+    </div>
+</div>
+
+<script>
+    function showPopup() {
+        // Validation
+        const inputs = document.querySelectorAll('.insumo-form input[required]');
+        let isValid = true;
+
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.parentElement.style.boxShadow = "0 0 0 2px var(--red)";
+                setTimeout(() => {
+                    input.parentElement.style.boxShadow = "none";
+                }, 3000);
+            }
+        });
+
+        if (!isValid) {
+            alert("Por favor, completa todos los campos obligatorios.");
+            return;
+        }
+
+        // Collect Data
+        const data = {
+            insumo: document.querySelector('input[placeholder="Ej: Toner Negro"]').value,
+            proveedor: document.querySelector('input[placeholder="Empresa proveedora"]').value,
+            marca: document.querySelector('input[placeholder="Ej: HP, Epson"]').value,
+            precio: document.querySelector('input[placeholder="0.00"]').value,
+            observaciones: document.querySelector('textarea').value
+        };
+
+        // Send Data
+        fetch("{% url 'registrar_compra' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Show Popup
+                    document.querySelector('.content-container').classList.add('blur-active');
+                    document.querySelector('#sidebar').classList.add('blur-active');
+                    document.querySelector('nav').classList.add('blur-active');
+                    document.getElementById('success-popup').classList.add('active');
+                } else {
+                    alert('Error al guardar: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar la solicitud.');
+            });
+    }
+</script>
+{% endblock %}

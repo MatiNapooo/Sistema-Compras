@@ -55,11 +55,21 @@ searchButton.addEventListener('click', function (e) {
 // Dark Mode Switch
 const switchMode = document.getElementById('switch-mode');
 
+// Check localStorage on load
+if (localStorage.getItem('darkMode') === 'enabled') {
+    document.body.classList.add('dark');
+    switchMode.checked = true;
+}
+
 switchMode.addEventListener('change', function () {
     if (this.checked) {
         document.body.classList.add('dark');
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('darkMode', 'enabled');
     } else {
         document.body.classList.remove('dark');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('darkMode', 'disabled');
     }
 })
 

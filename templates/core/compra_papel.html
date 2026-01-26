@@ -1,0 +1,331 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="content-container">
+    <div class="head-title">
+        <div class="left">
+            <h1>Compra de Papel</h1>
+            <ul class="breadcrumb">
+                <li><a href="{% url 'nueva_compra' %}">Volver</a></li>
+                <li><i class='bx bx-chevron-right'></i></li>
+                <li><a class="active" href="#">Papel</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 1. DETALLES DEL PAPEL -->
+    <form class="insumo-form" id="paper-details-form">
+        <div class="grid-container" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="card-input">
+                <label>Papel</label>
+                <div class="input-box">
+                    <input type="text" id="paper-type" placeholder="Ej: Ilustracion" required>
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Formato (cm)</label>
+                <div class="input-box" style="gap: 5px;">
+                    <input type="number" id="format-w" placeholder="Ancho" required>
+                    <span>x</span>
+                    <input type="number" id="format-h" placeholder="Alto" required>
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Gramaje (gr)</label>
+                <div class="input-box">
+                    <input type="number" id="grammage" placeholder="Ej: 150" required>
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Peso Resma (kg)</label>
+                <div class="input-box" style="background: var(--light-orange);">
+                    <input type="text" id="ream-weight" placeholder="0.00" readonly style="font-weight: bold;">
+                </div>
+            </div>
+            <div class="card-input full-width">
+                <label>Observaciones</label>
+                <div class="input-box">
+                    <textarea id="observations" placeholder="Detalles adicionales..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-confirm" onclick="revealTable()">
+            Siguiente
+            <i class='bx bx-chevron-down'></i>
+        </button>
+    </form>
+
+    <!-- 2. TABLA DE PROVEEDORES (Oculta al principio) -->
+    <div id="suppliers-section" style="display: none; margin-top: 40px; padding-bottom: 50px;">
+        <div class="table-data">
+            <div class="order">
+                <div class="head">
+                    <h3>Comparativa de Precios</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span>USD Venta: ${{ dolar.venta }}</span>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Proveedor</th>
+                            <th>Peso Total (kg)</th>
+                            <th>Precio / Kg ($)</th>
+                            <th>Dolar?</th>
+                            <th>Total</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplier-rows">
+                        <!-- Rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- POPUP -->
+<div id="confirm-popup" class="popup-overlay">
+    <div class="popup-content">
+        <div class="icon-checkmark" style="background: var(--orange);">
+            <i class='bx bx-question-mark'></i>
+        </div>
+        <h2>Confirmar Compra</h2>
+        <p id="popup-message">¿Seguro quieres comprar a ...?</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn-confirm" style="background: var(--red);" onclick="closePopup()">Cancelar</button>
+            <button class="btn-confirm" style="background: var(--green);" onclick="submitPurchase()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div id="success-popup" class="popup-overlay">
+    <div class="popup-content">
+        <div class="icon-checkmark">
+            <i class='bx bx-check'></i>
+        </div>
+        <h2>Compra Exitosa</h2>
+        <p>La orden ha sido registrada correctamente.</p>
+        <a href="{% url 'dashboard' %}" class="btn-order">Ir al Inicio</a>
+    </div>
+</div>
+
+<script>
+    const suppliers = ['Dimagraf', 'Cava', 'Resmacon', 'Gravent', 'Castinver', 'Hutton', 'Stenfar', 'Pergamino', 'Tucuman'];
+    // Safe parsing for dolar rate, defaulting to 0 if parsing fails
+    let dolarRate = 0;
+    try {
+        let dolarStr = "{{ dolar.venta|default:'0' }}".toString();
+        dolarStr = dolarStr.replace(',', '.');
+        dolarRate = parseFloat(dolarStr);
+        if (isNaN(dolarRate)) dolarRate = 0;
+    } catch (e) {
+        console.error("Error parsing dolar:", e);
+        dolarRate = 0;
+    }
+
+    console.log("Dolar Rate:", dolarRate);
+    let currentSupplier = null;
+    let currentTotal = 0;
+    let rawReamWeight = 0; // GLOBAL VARIABLE TO STORE RAW NUMBER
+
+    // 1. Calculate Ream Weight
+    function calculateWeight() {
+        const w = parseFloat(document.getElementById('format-w').value) || 0;
+        const h = parseFloat(document.getElementById('format-h').value) || 0;
+        const g = parseFloat(document.getElementById('grammage').value) || 0;
+
+        // Formula: (W * H * G) / 20.000
+        rawReamWeight = (w * h * g) / 20000;
+
+        // Format with comma for decimal separator
+        document.getElementById('ream-weight').value = rawReamWeight.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
+
+        return rawReamWeight;
+    }
+
+    ['format-w', 'format-h', 'grammage'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+            calculateWeight();
+            if (document.getElementById('suppliers-section').style.display !== 'none') {
+                updateTableCalculations();
+            }
+        });
+    });
+
+    // 2. Reveal Table
+    function revealTable() {
+        try {
+            if (!rawReamWeight) {
+                calculateWeight();
+            }
+            if (rawReamWeight <= 0 || isNaN(rawReamWeight)) {
+                alert('Por favor completa los datos del papel primero (Ancho, Alto y Gramaje).');
+                return;
+            }
+
+            const tbody = document.getElementById('supplier-rows');
+            if (tbody.children.length === 0) {
+                console.log("Building table rows...");
+                suppliers.forEach((name, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <span style="font-weight: 600;">${name}</span>
+                        </td>
+                        <td>
+                            <span class="row-weight">0.00</span>
+                        </td>
+                        <td>
+                            <div class="input-box" style="width: 120px; padding: 5px 10px;">
+                                <span style="margin-right: 5px;">$</span>
+                                <input type="number" class="price-input" data-index="${index}" placeholder="0.00">
+                            </div>
+                        </td>
+                        <td>
+                            <label class="switch-mode" style="width: 40px; height: 20px;">
+                                <input type="checkbox" class="dolar-toggle" data-index="${index}">
+                                <span class="slider round" style="background: var(--grey); border-radius: 20px; position:absolute; top:0; left:0; right:0; bottom:0; transition:.4s;"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <span class="row-total" style="font-weight: bold; color: var(--blue);">0.00</span>
+                        </td>
+                        <td>
+                            <button class="btn-confirm" style="padding: 8px 15px; font-size: 12px;" onclick="confirmPurchase('${name}', ${index})">
+                                Comprar
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Add listeners to new inputs
+                document.querySelectorAll('.price-input, .dolar-toggle').forEach(el => {
+                    el.addEventListener('input', updateTableCalculations);
+                });
+            }
+
+            updateTableCalculations();
+
+            // Force display block
+            const section = document.getElementById('suppliers-section');
+            section.style.display = 'block';
+
+            setTimeout(() => {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        } catch (e) {
+            alert("Error mostrando tabla: " + e.message);
+            console.error(e);
+        }
+    }
+
+    // 3. Update Table Calculations
+    function updateTableCalculations() {
+        try {
+            // Use GLOBAL rawReamWeight instead of reading DOM
+            const weight = rawReamWeight;
+
+            document.querySelectorAll('#supplier-rows tr').forEach((row, index) => {
+                // Update Weight column (formatted)
+                row.querySelector('.row-weight').innerText = weight.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
+
+                const priceInput = row.querySelector('.price-input');
+                const toggle = row.querySelector('.dolar-toggle');
+                const totalSpan = row.querySelector('.row-total');
+
+                const pricePerKg = parseFloat(priceInput.value) || 0;
+                let total = weight * pricePerKg; // Base total in Pesos
+
+                if (toggle.checked && dolarRate > 0) {
+                    total = total / dolarRate;
+                    totalSpan.innerText = 'USD ' + total.toFixed(2);
+                } else {
+                    totalSpan.innerText = '$ ' + total.toLocaleString('es-AR', { minimumFractionDigits: 2 });
+                }
+            });
+        } catch (e) {
+            console.error("Error calculating table:", e);
+        }
+    }
+
+    // 4. Confirm Purchase
+    function confirmPurchase(name, index) {
+        const row = document.querySelectorAll('#supplier-rows tr')[index];
+        const price = row.querySelector('.price-input').value;
+
+        if (!price) {
+            alert('Ingresa el precio por kilo primero.');
+            return;
+        }
+
+        currentSupplier = name;
+        // Calculate raw total for storage. 
+        // We probably want to store the final currency amount and maybe the currency type?
+        // For simplicity, let's store what's shown in the total.
+        currentTotal = row.querySelector('.row-total').innerText;
+
+        document.getElementById('popup-message').innerText = `¿Seguro quieres comprar a ${name}?`;
+        document.getElementById('confirm-popup').classList.add('active');
+        document.querySelector('.content-container').classList.add('blur-active');
+    }
+
+    function closePopup() {
+        document.getElementById('confirm-popup').classList.remove('active');
+        document.querySelector('.content-container').classList.remove('blur-active');
+    }
+
+    function submitPurchase() {
+        // Prepare Data
+        const paperType = document.getElementById('paper-type').value;
+        const w = document.getElementById('format-w').value;
+        const h = document.getElementById('format-h').value;
+        const g = document.getElementById('grammage').value;
+
+        const data = {
+            insumo: `Papel ${paperType} ${w}x${h} ${g}gr`,
+            proveedor: currentSupplier,
+            marca: '-', // Not relevant for paper?
+            precio: parseFloat(currentTotal.replace(/[^0-9.-]+/g, "")), // Extract number
+            observaciones: document.getElementById('observations').value
+        };
+
+        // AJAX
+        fetch("{% url 'registrar_compra' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    closePopup(); // Close confirm
+                    document.getElementById('success-popup').classList.add('active'); // Open success
+                } else {
+                    alert('Error: ' + d.message);
+                }
+            });
+    }
+</script>
+
+<style>
+    /* Toggle Switch Style */
+    .switch-mode input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .switch-mode input:checked+.slider {
+        background-color: var(--blue);
+    }
+
+    .switch-mode input:checked+.slider:before {
+        transform: translateX(20px);
+    }
+</style>
+{% endblock %}
