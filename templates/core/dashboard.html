@@ -36,25 +36,64 @@
                     <th>Usuario</th>
                     <th>Fecha</th>
                     <th>Producto</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
                 {% for order in recent_orders %}
-                <tr>
+                <tr id="order-row-{{ order.id }}">
                     <td>
-                        <img src="{% static 'img/people.png' %}" alt="User">
-                        <p>{{ order.pedido_por }}</p>
+                        <a href="{% url 'orden_compra' order.id %}"
+                            style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                            <img src="{{ order.usuario.profile.image.url }}" alt="User"
+                                onerror="this.src='/static/img/people.png'">
+                            <p style="margin-left: 10px;">{{ order.pedido_por }}</p>
+                        </a>
                     </td>
                     <td>{{ order.fecha|date:"d-m-Y" }}</td>
                     <td><span class="status completed">{{ order.insumo }}</span></td>
+                    <td>
+                        <!-- Delete Button -->
+                        <button onclick="deleteOrder({{ order.id }})"
+                            style="background: none; border: none; color: #db504a; cursor: pointer; font-size: 1.2rem;">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" style="text-align: center;">No hay ordenes recientes.</td>
+                    <td colspan="4" style="text-align: center;">No hay ordenes recientes.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+    function deleteOrder(orderId) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta orden?')) {
+            fetch(`/eliminar-orden/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove row from table
+                        const row = document.getElementById(`order-row-${orderId}`);
+                        if (row) row.remove();
+                    } else {
+                        alert('Error al eliminar: ' + (data.message || 'Error desconocido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión.');
+                });
+        }
+    }
+</script>
 {% endblock %}

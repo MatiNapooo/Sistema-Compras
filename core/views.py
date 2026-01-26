@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 import json
 import urllib.request
+import re
 from .models import Compra
 from django.http import JsonResponse
 from datetime import datetime
@@ -60,7 +61,7 @@ def registrar_compra(request):
         try:
             data = json.loads(request.body)
             # Create new purchase
-            Compra.objects.create(
+            created_compra = Compra.objects.create(
                 usuario=request.user,
                 tipo='INSUMO', # For now, hardcoded as we are in insumo form
                 pedido_por=request.user.first_name if request.user.first_name else request.user.username,
@@ -70,7 +71,7 @@ def registrar_compra(request):
                 precio=data.get('precio'),
                 observaciones=data.get('observaciones')
             )
-            return JsonResponse({'status': 'success'})
+            return JsonResponse({'status': 'success', 'id': created_compra.id})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=400)
@@ -103,3 +104,52 @@ def compra_papel_view(request):
         print(f"Error fetching dolar: {e}")
 
     return render(request, 'core/compra_papel.html', {'dolar': dolar_oficial})
+
+@login_required(login_url='/')
+def orden_compra_view(request, compra_id):
+    compra = get_object_or_404(Compra, id=compra_id)
+    
+    # Defaults
+    parsed_data = {
+        'tipo': compra.insumo,
+        'ancho': '-',
+        'alto': '-',
+        'gramaje': '-',
+        'qty': 1,
+        'unit_price': compra.precio
+    }
+
+    # Regex Parsing for Paper: "Papel [Type] [W]x[H] [G]gr (x[Qty])"
+    # Example: Papel Ilustracion 72x102 275gr (x12)
+    match = re.search(r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)", compra.insumo)
+    if match:
+        parsed_data['tipo'] = match.group(1)
+        parsed_data['ancho'] = match.group(2)
+        parsed_data['alto'] = match.group(3)
+        parsed_data['gramaje'] = match.group(4)
+        parsed_data['qty'] = int(match.group(5))
+        if parsed_data['qty'] > 0:
+            parsed_data['unit_price'] = compra.precio / parsed_data['qty']
+
+    # Calculations
+    # Ensure precio is treated as a number (it might come as a string/decimal from DB)
+    subtotal = float(compra.precio)
+    iva = subtotal * 0.21
+    total_final = subtotal + iva
+
+    context = {
+        'compra': compra,
+        'parsed': parsed_data,
+        'iva': iva,
+        'total_final': total_final,
+        'fecha_hoy': datetime.now()
+    }
+    return render(request, 'core/orden_compra.html', context)
+
+@login_required(login_url='/')
+def delete_compra(request, compra_id):
+    if request.method == 'POST':
+        compra = get_object_or_404(Compra, id=compra_id)
+        compra.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=400)

@@ -16,6 +16,8 @@ urlpatterns = [
     path('nueva-compra/insumo/', views.compra_insumo_view, name='compra_insumo'),
     path('nueva-compra/papel/', views.compra_papel_view, name='compra_papel'),
     path('registrar-compra/', views.registrar_compra, name='registrar_compra'),
+    path('orden-compra/<int:compra_id>/', views.orden_compra_view, name='orden_compra'),
+    path('eliminar-orden/<int:compra_id>/', views.delete_compra, name='delete_compra'),
 ]
 
 if settings.DEBUG:
