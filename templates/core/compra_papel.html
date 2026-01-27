@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block content %}
 <div class="content-container">
@@ -134,11 +135,21 @@
     let dolarRate = 0;
     try {
         let dolarStr = "{{ dolar.venta|default:'0' }}".toString();
-        // Reemplazamos coma por punto por si acaso viene con formato argentino
+        // Backend usually sends 1200 or 1200.50 (number or string with dot)
+        // If it sends '1.200,50' (Argentine format), we need to fix it.
+        // Step 1: Remove thousands separator (dots) if present AND there is a comma later
+        if (dolarStr.includes('.') && dolarStr.includes(',')) {
+            dolarStr = dolarStr.replace(/\./g, '');
+        } else if (dolarStr.includes(',') && !dolarStr.includes('.')) {
+            // Just comma decimal, no thousands
+        }
+
+        // Step 2: Replace comma with dot for JS
         dolarStr = dolarStr.replace(',', '.');
+
         dolarRate = parseFloat(dolarStr);
         if (isNaN(dolarRate)) dolarRate = 0;
-        console.log("Cotización Dolar:", dolarRate);
+        console.log("Cotización Dolar Parsed:", dolarRate);
     } catch (e) {
         console.error("Error al leer dolar:", e);
     }
@@ -148,14 +159,57 @@
     let currentQty = 1;
     let rawReamWeight = 0; // Variable global para el peso exacto
 
-    // Función auxiliar para leer números (acepta comas y puntos)
+    // Función auxiliar para leer números (acepta comas y puntos como separadores)
+    // Objetivo: "1.000,50" -> 1000.50 | "1,000.50" -> 1000.50 | "1000" -> 1000
     function parseInputNumber(id) {
         const input = document.getElementById(id);
         if (!input) return 0;
         let val = input.value;
         if (!val) return 0;
-        // Reemplaza comas por puntos para que JS entienda el decimal
-        val = val.toString().replace(',', '.');
+        val = val.toString();
+
+        // 1. Si tiene puntos y comas, asumimos formato AR/EU (1.000,50) O US (1,000.50)
+        // Heurística simple: el último separador es el decimal.
+        const lastDot = val.lastIndexOf('.');
+        const lastComma = val.lastIndexOf(',');
+
+        if (lastDot > -1 && lastComma > -1) {
+            if (lastComma > lastDot) {
+                // Formato: 1.000,50 (AR) -> Quitar puntos, cambiar coma por punto
+                val = val.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Formato: 1,000.50 (US) -> Quitar comas
+                val = val.replace(/,/g, '');
+            }
+        } else if (lastComma > -1) {
+            // Solo comas: "10,5" -> 10.5 | "1,000" -> 1000? 
+            // Asumimos coma es decimal SIEMPRE en este contexto, salvo que sea conflicto.
+            // Para evitar líos: reemplazamos coma por punto.
+            val = val.replace(',', '.');
+        }
+        // Si solo tiene puntos ("1.000"), JS lo toma como 1.
+        // Pero si el usuario tipea "1.000" para mil, queremos 1000.
+        // SOLUCIÓN: inputs type="number" suelen manejar esto, pero si es type="text"...
+        // Aquí asumimos que si hay puntos, son miles si no hay float? No, muy arriesgado.
+
+        // MEJOR APROXIMACION para inputs manuales:
+        // Removemos todos los puntos de miles (si parece ser separador de miles)
+        // Esto es complejo. Simplifiquemos:
+        // Parseamos directo reemplazando comas por puntos.
+
+        // NUEVA ESTRATEGIA ROBUSTA:
+        // Eliminar puntos de mil (si hay coma después).
+        // "45.000,00" -> Remove . -> "45000,00" -> Replace , -> "45000.00"
+
+        // Limpiar caracteres no numéricos excepto , y .
+        val = val.replace(/[^0-9,.-]/g, '');
+
+        if (val.indexOf('.') !== -1 && val.indexOf(',') !== -1) {
+            val = val.replace(/\./g, '').replace(',', '.');
+        } else if (val.indexOf(',') !== -1) {
+            val = val.replace(',', '.');
+        }
+
         return parseFloat(val) || 0;
     }
 
@@ -248,8 +302,8 @@
                                 </div>
                             </label>
                             <div class="cyber-toggle-labels">
-                                <span class="cyber-toggle-label-off">ARS</span>
-                                <span class="cyber-toggle-label-on">USD</span>
+                                <span class="cyber-toggle-label-off">USD</span>
+                                <span class="cyber-toggle-label-on">ARS</span>
                             </div>
                         </div>
                     </td>
@@ -306,20 +360,19 @@
             row.querySelector('.row-weight').innerText = weight.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
             const priceInput = row.querySelector('.price-input');
-            const toggle = row.querySelector('.dolar-toggle');
-            const qtyInput = row.querySelector('.qty-input');
-            const reamPriceSpan = row.querySelector('.row-ream-price');
-            const totalSpan = row.querySelector('.row-total');
-
             // 1. Obtener precio por Kg ingresado
-            let pricePerKgInput = parseFloat(priceInput.value) || 0;
+            // Usamos la misma lógica: input puede tener puntos de mil y coma decimal.
+            // Limpiamos puntos, cambiamos coma por punto.
+            let rawPrice = priceInput.value || "0";
+            rawPrice = rawPrice.replace(/\./g, '').replace(',', '.');
+            let pricePerKgInput = parseFloat(rawPrice) || 0;
 
             // 2. Determinar precio en PESOS (convertir si es dolar)
             let pricePerKgFinal = pricePerKgInput;
 
-            // Si el toggle está activado, el input es en DOLARES -> Convertimos a PESOS
-            // Lógica inversa a lo anterior: Input (USD) * Rate = Pesos
-            if (toggle.checked && dolarRate > 0) {
+            // Si el toggle está APAGADO (unchecked), el input es en DOLARES -> Convertimos a PESOS
+            // Si el toggle está ENCENDIDO (checked), el input es en PESOS -> Directo
+            if (!toggle.checked && dolarRate > 0) {
                 pricePerKgFinal = pricePerKgInput * dolarRate;
             }
 
