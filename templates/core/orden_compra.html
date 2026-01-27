@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <style>
@@ -25,7 +26,8 @@
     }
 
     .company-logo img {
-        height: 60px;
+        height: 80px;
+        /* Adjusted size */
         margin-bottom: 10px;
     }
 
@@ -142,28 +144,49 @@
     }
 
     @media print {
-        body * {
-            visibility: hidden;
+
+        /* Hide everything by default, then show invoice */
+        #sidebar,
+        nav,
+        .print-btn {
+            display: none !important;
         }
 
-        .invoice-container,
-        .invoice-container * {
-            visibility: visible;
+        body,
+        #content {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            left: 0 !important;
         }
 
         .invoice-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            box-shadow: none;
-            padding: 20px;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
         }
 
-        .print-btn,
-        #sidebar,
-        nav {
-            display: none !important;
+        /* Force table borders for printing */
+        .invoice-table,
+        .invoice-table th,
+        .invoice-table td {
+            border: 1px solid #000 !important;
+        }
+
+        .invoice-table th {
+            color: #000 !important;
+            /* Force black text for headers */
+            font-weight: bold !important;
+        }
+
+        /* Adjust spacing for print */
+        .invoice-table td,
+        .invoice-table th {
+            padding: 8px !important;
         }
     }
 </style>
@@ -173,8 +196,7 @@
     <div class="invoice-header">
         <div class="company-section">
             <div class="company-logo">
-                <!-- Assuming logo exists or use text -->
-                <h1 style="color: var(--blue); font-weight: 800;">np</h1>
+                <img src="{% static 'img/logo_nextprint.jpeg' %}" alt="Next Print">
             </div>
             <div class="company-info">
                 <p><strong>NEXT PRINT SA</strong></p>
@@ -185,7 +207,7 @@
         </div>
         <div class="invoice-title">
             <h2>Orden de Compra</h2>
-            <div class="po-number">Nº {{ compra.id }}</div>
+            <!-- PO Number removed as requested -->
             <div class="invoice-meta">
                 <p><strong>Fecha:</strong> {{ compra.fecha|date:"d/m/Y" }}</p>
                 <p><strong>Solicitante:</strong> {{ compra.pedido_por }}</p>
@@ -214,10 +236,12 @@
             <tr>
                 <th style="width: 8%;">Cant.</th>
                 <th style="width: 10%;">Unidad</th>
-                <th style="width: 20%;">Insumo</th>
+                <th style="width: {% if parsed.is_paper %}20%{% else %}38%{% endif %};">Insumo</th>
                 <th style="width: 25%;">Observaciones</th>
+                {% if parsed.is_paper %}
                 <th style="width: 10%;">Formato</th>
                 <th style="width: 8%;">Gramaje</th>
+                {% endif %}
                 <th style="width: 10%; text-align: right;">P. Unitario</th>
                 <th style="width: 10%; text-align: right;">P. Total</th>
             </tr>
@@ -225,13 +249,20 @@
         <tbody>
             <tr>
                 <td style="text-align: center;">{{ parsed.qty }}</td>
-                <td style="text-align: center;">{% if parsed.qty > 1 %}Resmas{% else %}Unidad{% endif %}</td>
-                <td>{{ parsed.tipo }}</td>
+                <td style="text-align: center;">{% if parsed.is_paper %}Resmas{% else %}Unidad{% endif %}</td>
+                <td>
+                    {{ parsed.tipo }}
+                    {% if not parsed.is_paper and compra.marca and compra.marca != '-' %}
+                    <br><small style="color: #666;">Marca: {{ compra.marca }}</small>
+                    {% endif %}
+                </td>
                 <td>{{ compra.observaciones|default:"-" }}</td>
+                {% if parsed.is_paper %}
                 <td style="text-align: center;">{{ parsed.ancho }} x {{ parsed.alto }}</td>
                 <td style="text-align: center;">{{ parsed.gramaje }}</td>
-                <td style="text-align: right;">$ {{ parsed.unit_price|floatformat:2 }}</td>
-                <td style="text-align: right;">$ {{ compra.precio|floatformat:2 }}</td>
+                {% endif %}
+                <td style="text-align: right;">$ {{ parsed.unit_price|floatformat:2|intcomma }}</td>
+                <td style="text-align: right;">$ {{ compra.precio|floatformat:2|intcomma }}</td>
             </tr>
             <!-- Fill empty rows to look like the example? Optional, skipping for now to keep it clean -->
         </tbody>
@@ -242,15 +273,15 @@
         <table class="totals-table">
             <tr>
                 <td>SUBTOTAL</td>
-                <td>$ {{ compra.precio|floatformat:2 }}</td>
+                <td>$ {{ compra.precio|floatformat:2|intcomma }}</td>
             </tr>
             <tr>
                 <td>IVA (21%)</td>
-                <td>$ {{ iva|floatformat:2 }}</td>
+                <td>$ {{ iva|floatformat:2|intcomma }}</td>
             </tr>
             <tr class="final-total">
                 <td>TOTAL</td>
-                <td>$ {{ total_final|floatformat:2 }}</td>
+                <td>$ {{ total_final|floatformat:2|intcomma }}</td>
             </tr>
         </table>
     </div>

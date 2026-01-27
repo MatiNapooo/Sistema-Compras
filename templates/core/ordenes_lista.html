@@ -1,0 +1,303 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/cosmic-toggle.css' %}">
+<link rel="stylesheet" href="{% static 'css/orders-transition.css' %}">
+
+<div class="head-title">
+    <div class="left">
+        <h1>Ordenes de Compra</h1>
+
+    </div>
+
+    <!-- Cosmic Toggle for Switching Tables -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <label class="cosmic-toggle" style="transform: scale(0.7);">
+            <input class="toggle" type="checkbox" id="tableToggle">
+            <div class="slider">
+                <div class="cosmos"></div>
+                <div class="energy-line"></div>
+                <div class="energy-line"></div>
+                <div class="energy-line"></div>
+                <div class="toggle-orb">
+                    <div class="inner-orb"></div>
+                    <div class="ring"></div>
+                </div>
+                <div class="particles">
+                    <div style="--angle: 30deg" class="particle"></div>
+                    <div style="--angle: 60deg" class="particle"></div>
+                    <div style="--angle: 90deg" class="particle"></div>
+                    <div style="--angle: 120deg" class="particle"></div>
+                    <div style="--angle: 150deg" class="particle"></div>
+                    <div style="--angle: 180deg" class="particle"></div>
+                </div>
+            </div>
+        </label>
+    </div>
+</div>
+
+<div class="orders-container" style="margin-top: 20px;">
+
+    <!-- Table 1: Insumos (Default Visible) -->
+    <div class="orders-table-wrapper active" id="insumosTable">
+        <div class="table-data">
+            <div class="order">
+                <div class="head">
+                    <h3>Insumos</h3>
+                    <div class="search-box">
+                        <input type="text" id="insumoSearch" placeholder="Buscar insumo..."
+                            onkeyup="filterTable('insumosTableData', 'insumoSearch')">
+                        <i class='bx bx-search' onclick="toggleSearch('insumoSearch')"></i>
+                    </div>
+                </div>
+                <style>
+                    /* Compact table styles */
+                    .orders-table-wrapper table td,
+                    .orders-table-wrapper table th {
+                        padding: 6px 10px !important;
+                        /* Reduced padding */
+                        font-size: 13px !important;
+                        /* Slightly smaller font */
+                    }
+
+                    .orders-table-wrapper table img {
+                        width: 28px !important;
+                        /* Smaller user image */
+                        height: 28px !important;
+                    }
+
+                    .orders-table-wrapper .status {
+                        padding: 6px 12px !important;
+                        /* Smaller buttons */
+                        font-size: 12px !important;
+                    }
+
+                    /* Search Box Styles */
+                    .search-box {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        background: var(--light);
+                        border-radius: 20px;
+                        padding: 0 10px;
+                    }
+
+                    .search-box input {
+                        border: none;
+                        background: transparent;
+                        outline: none;
+                        width: 0;
+                        transition: width 0.3s ease;
+                        padding: 5px 0;
+                        font-size: 14px;
+                    }
+
+                    .search-box input.active {
+                        width: 150px;
+                        border-bottom: 1px solid var(--grey);
+                    }
+
+                    .search-box i {
+                        cursor: pointer;
+                        font-size: 20px;
+                    }
+                </style>
+                <table id="insumosTableData">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Insumo</th>
+                            <th>Proveedor</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for orden in insumos %}
+                        <tr>
+                            <td>
+                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
+                                <p>{{ orden.pedido_por }}</p>
+                            </td>
+                            <td class="search-target">{{ orden.insumo }}</td>
+                            <td>{{ orden.proveedor|default:"-" }}</td>
+                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
+                            <td style="display: flex; gap: 10px;">
+                                <a href="{% url 'orden_compra' orden.id %}" class="status completed"
+                                    style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                    <i class='bx bxs-file-find'></i> Ver
+                                </a>
+                                <button onclick="deleteOrder({{ orden.id }})" class="status pending"
+                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
+                                    <i class='bx bxs-trash'></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No hay ordenes de insumos registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table 2: Papel (Default Hidden) -->
+    <div class="orders-table-wrapper" id="papelesTable">
+        <div class="table-data" style="background: rgba(60, 145, 230, 0.05);"> <!-- Slight tint for paper -->
+            <div class="order">
+                <div class="head">
+                    <h3>Papel</h3>
+                    <div class="search-box">
+                        <input type="text" id="papelSearch" placeholder="Buscar papel..."
+                            onkeyup="filterTable('papelesTableData', 'papelSearch')">
+                        <i class='bx bx-search' onclick="toggleSearch('papelSearch')"></i>
+                    </div>
+                </div>
+                <table id="papelesTableData">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Papel</th>
+                            <th>Proveedor</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for orden in papeles %}
+                        <tr>
+                            <td>
+                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
+                                <p>{{ orden.pedido_por }}</p>
+                            </td>
+                            <td class="search-target">{{ orden.insumo }}</td>
+                            <td>{{ orden.proveedor|default:"-" }}</td>
+                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
+                            <td style="display: flex; gap: 10px;">
+                                <a href="{% url 'orden_compra' orden.id %}" class="status completed"
+                                    style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                    <i class='bx bxs-file-find'></i> Ver
+                                </a>
+                                <button onclick="deleteOrder({{ orden.id }})" class="status pending"
+                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
+                                    <i class='bx bxs-trash'></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No hay ordenes de papel registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const toggle = document.getElementById('tableToggle');
+    const insumosTable = document.getElementById('insumosTable');
+    const papelesTable = document.getElementById('papelesTable');
+    const container = document.querySelector('.orders-container');
+
+    function updateContainerHeight() {
+        const activeTable = toggle.checked ? papelesTable : insumosTable;
+        // Get the height of the active table's content
+        const height = activeTable.querySelector('.table-data').offsetHeight;
+        // Set the container height
+        container.style.height = height + 'px';
+    }
+
+    // Update height on load
+    window.addEventListener('load', updateContainerHeight);
+
+    // Update height on resize (responsiveness)
+    window.addEventListener('resize', updateContainerHeight);
+
+    toggle.addEventListener('change', function () {
+        if (this.checked) {
+            // Show Papel, Hide Insumos
+            insumosTable.classList.remove('active');
+            insumosTable.classList.add('inactive');
+
+            setTimeout(() => {
+                papelesTable.classList.remove('inactive');
+                papelesTable.classList.add('active');
+                updateContainerHeight(); // Update height for new table
+            }, 100); // Small delay for effect overlap
+        } else {
+            // Show Insumos, Hide Papel
+            papelesTable.classList.remove('active');
+            papelesTable.classList.add('inactive');
+
+            setTimeout(() => {
+                insumosTable.classList.remove('inactive');
+                insumosTable.classList.add('active');
+                updateContainerHeight(); // Update height for new table
+            }, 100);
+        }
+    });
+
+    function toggleSearch(id) {
+        const input = document.getElementById(id);
+        input.classList.toggle('active');
+        if (input.classList.contains('active')) {
+            input.focus();
+        } else {
+            input.value = ''; // Clear search when closed
+            // Trigger keyup to reset table
+            const event = new Event('keyup');
+            input.dispatchEvent(event);
+        }
+    }
+
+    function filterTable(tableId, inputId) {
+        const input = document.getElementById(inputId);
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById(tableId);
+        const tr = table.getElementsByTagName("tr");
+
+        for (i = 0; i < tr.length; i++) {
+            // Find the Product Name column (marked with class 'search-target')
+            // It is the 2nd column (index 1), but we used a class to be safe.
+            const td = tr[i].getElementsByClassName("search-target")[0];
+            if (td) {
+                const txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+        updateContainerHeight(); // Update height after filtering
+    }
+
+    function deleteOrder(id) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta orden?')) {
+            fetch(`/eliminar-orden/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar');
+                    }
+                });
+        }
+    }
+</script>
+
+{% endblock %}

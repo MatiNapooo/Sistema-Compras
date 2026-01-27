@@ -1,0 +1,44 @@
+/* Futuristic Table Transition */
+.orders-container {
+    position: relative;
+    width: 100%;
+    /* min-height removed, controlled by JS, but keeping a small default just in case */
+    min-height: 200px;
+    overflow: hidden;
+    transition: height 0.3s ease;
+    /* Smooth height resizing */
+}
+
+.orders-table-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%) scale(0.8) rotateY(-20deg);
+    filter: blur(10px);
+    z-index: 1;
+}
+
+.orders-table-wrapper.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0) scale(1) rotateY(0deg);
+    filter: blur(0);
+    z-index: 10;
+}
+
+.orders-table-wrapper.inactive {
+    transform: translateX(-100%) scale(0.8) rotateY(20deg);
+    filter: blur(10px);
+}
+
+/* Enhancing table look for the futuristic theme */
+.table-data {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}

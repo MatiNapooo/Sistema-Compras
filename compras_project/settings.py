@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'core',  # <--- TU APP
 ]
 
@@ -63,6 +64,10 @@ LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
+USE_THOUSAND_SEPARATOR = True
+DECIMAL_SEPARATOR = ','
+THOUSAND_SEPARATOR = '.'
+NUMBER_GROUPING = 3
 
 # 7. Archivos Estáticos
 STATIC_URL = '/static/'

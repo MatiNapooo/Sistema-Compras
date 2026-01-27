@@ -1,0 +1,154 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/historial.css' %}">
+
+<div class="head-title">
+    <div class="left">
+        <h1>Historial de Compras</h1>
+    </div>
+</div>
+
+<div class="history-container">
+
+    <!-- Search Section -->
+    <form method="GET" action="{% url 'historial' %}" id="historyForm" onsubmit="return validateForm()">
+        <div class="search-grid">
+            <!-- Query Card -->
+            <div class="search-card">
+                <div class="card-icon">
+                    <i class='bx bxs-component'></i>
+                </div>
+                <div class="card-content">
+                    <label>¿Qué buscamos?</label>
+                    <input type="text" name="q" placeholder="Ej: Tinta Amarilla, Papel Obra..." value="{{ query }}">
+                </div>
+            </div>
+
+            <!-- Provider Card -->
+            <div class="search-card">
+                <div class="card-icon">
+                    <i class='bx bxs-truck'></i>
+                </div>
+                <div class="card-content">
+                    <label>Proveedor</label>
+                    <input type="text" name="provider" placeholder="Ej: Stenfard..." value="{{ provider }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Span Selector -->
+        <div class="time-selector-container">
+            <h3>Lapso de Tiempo (Requerido)</h3>
+            <div class="time-chips">
+                <label class="time-chip">
+                    <input type="radio" name="months" value="1" {% if months=='1' %}checked{% endif %}>
+                    <span>1 Mes</span>
+                </label>
+                <label class="time-chip">
+                    <input type="radio" name="months" value="3" {% if months=='3' %}checked{% endif %}>
+                    <span>3 Meses</span>
+                </label>
+                <label class="time-chip">
+                    <input type="radio" name="months" value="6" {% if months=='6' %}checked{% endif %}>
+                    <span>6 Meses</span>
+                </label>
+                <label class="time-chip">
+                    <input type="radio" name="months" value="12" {% if months=='12' %}checked{% endif %}>
+                    <span>1 Año</span>
+                </label>
+                <label class="time-chip">
+                    <input type="radio" name="months" value="all" {% if months=='all' %}checked{% endif %}>
+                    <span>Todo</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-container">
+            <button type="submit" class="search-btn-main">
+                <i class='bx bx-search-alt'></i> Buscar Historial
+            </button>
+        </div>
+    </form>
+
+    <!-- Results Table -->
+    {% if results %}
+    <div class="history-results">
+        <div class="table-data">
+            <div class="order">
+                <div class="head">
+                    <h3>Resultados</h3>
+                    <i class='bx bx-filter'></i>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Producto</th>
+                            <th>Proveedor</th>
+                            <th>Detalles</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for orden in results %}
+                        <tr>
+                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
+                            <td>
+                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
+                                <p>{{ orden.pedido_por }}</p>
+                            </td>
+                            <td>{{ orden.insumo }}</td>
+                            <td>{{ orden.proveedor|default:"-" }}</td>
+                            <td class="details-cell">
+                                {% if orden.tipo == 'PAPEL' %}
+                                <span class="badge-detail">Gramaje: {{ orden.gramaje }}gr</span>
+                                <span class="badge-detail">Formato: {{ orden.formato }}</span>
+                                {% else %}
+                                <span class="badge-simple">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'orden_compra' orden.id %}" class="status completed">
+                                    <i class='bx bxs-file-find'></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% elif request.GET.months %} <!-- Only show if search was attempted -->
+    <div class="no-results">
+        <i class='bx bx-search-alt'></i>
+        <p>No se encontraron resultados con esos criterios.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function validateForm() {
+        const query = document.querySelector('input[name="q"]').value;
+        const provider = document.querySelector('input[name="provider"]').value;
+        const months = document.querySelector('input[name="months"]:checked');
+
+        if (!months) {
+            alert("Por favor, selecciona un lapso de tiempo.");
+            return false;
+        }
+
+        if (!query && !provider) {
+            alert("Debes llenar al menos un campo de búsqueda (Insumo o Proveedor).");
+            return false;
+        }
+
+        return true;
+    }
+</script>
+{% endblock %}

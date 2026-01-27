@@ -7,7 +7,7 @@ import urllib.request
 import re
 from .models import Compra
 from django.http import JsonResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def login_view(request):
     if request.method == 'POST':
@@ -47,14 +47,15 @@ def dashboard_view(request):
     except Exception as e:
         print(f"Error fetching dolar: {e}")
 
-    # Fetch recent orders (last 5)
-    recent_orders = Compra.objects.all().order_by('-fecha')[:5]
+    # Fetch recent orders (last 3)
+    recent_orders = Compra.objects.all().order_by('-fecha')[:3]
 
     return render(request, 'core/dashboard.html', {
         'dolar': dolar_oficial,
         'recent_orders': recent_orders
     })
 
+@login_required(login_url='/')
 @login_required(login_url='/')
 def registrar_compra(request):
     if request.method == 'POST':
@@ -63,7 +64,7 @@ def registrar_compra(request):
             # Create new purchase
             created_compra = Compra.objects.create(
                 usuario=request.user,
-                tipo='INSUMO', # For now, hardcoded as we are in insumo form
+                tipo=data.get('tipo', 'INSUMO'), # Use provided type or default
                 pedido_por=request.user.first_name if request.user.first_name else request.user.username,
                 insumo=data.get('insumo'),
                 proveedor=data.get('proveedor'),
@@ -116,12 +117,18 @@ def orden_compra_view(request, compra_id):
         'alto': '-',
         'gramaje': '-',
         'qty': 1,
-        'unit_price': compra.precio
+        'unit_price': compra.precio,
+        'is_paper': False
     }
 
     # Regex Parsing for Paper: "Papel [Type] [W]x[H] [G]gr (x[Qty])"
     # Example: Papel Ilustracion 72x102 275gr (x12)
     match = re.search(r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)", compra.insumo)
+    
+    # Determine if it is paper based on Type OR Regex match (for backward compatibility)
+    if compra.tipo == 'PAPEL' or match:
+        parsed_data['is_paper'] = True
+        
     if match:
         parsed_data['tipo'] = match.group(1)
         parsed_data['ancho'] = match.group(2)
@@ -130,6 +137,16 @@ def orden_compra_view(request, compra_id):
         parsed_data['qty'] = int(match.group(5))
         if parsed_data['qty'] > 0:
             parsed_data['unit_price'] = compra.precio / parsed_data['qty']
+            
+    # Generic Insumo Parsing: "Item Name (xQty)"
+    # Fallback if not Paper but has quantity suffix
+    elif not parsed_data['is_paper']:
+        match_generic = re.search(r"(.+) \(x(\d+)\)$", compra.insumo)
+        if match_generic:
+            parsed_data['tipo'] = match_generic.group(1)
+            parsed_data['qty'] = int(match_generic.group(2))
+            if parsed_data['qty'] > 0:
+                parsed_data['unit_price'] = compra.precio / parsed_data['qty']
 
     # Calculations
     # Ensure precio is treated as a number (it might come as a string/decimal from DB)
@@ -153,3 +170,57 @@ def delete_compra(request, compra_id):
         compra.delete()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=400)
+
+@login_required(login_url='/')
+def ordenes_list_view(request):
+    # Fetch all orders
+    all_orders = Compra.objects.all().order_by('-fecha')
+    
+    # Filter by type
+    insumos = all_orders.filter(tipo='INSUMO')
+    papeles = all_orders.filter(tipo='PAPEL')
+    
+    context = {
+        'insumos': insumos,
+        'papeles': papeles
+    }
+    return render(request, 'core/ordenes_lista.html', context)
+
+@login_required(login_url='/')
+def historial_view(request):
+    # Get query parameters
+    query = request.GET.get('q', '')
+    provider = request.GET.get('provider', '')
+    months = request.GET.get('months', '')
+    
+    results = []
+    
+    if request.method == 'GET' and (query or provider or months):
+        orders = Compra.objects.all().order_by('-fecha')
+        
+        # Filter by Time
+        if months and months != 'all':
+            try:
+                days = int(months) * 30
+                start_date = datetime.now() - timedelta(days=days)
+                orders = orders.filter(fecha__gte=start_date)
+            except ValueError:
+                pass # Ignore invalid month values
+        
+        # Filter by Query (Insumo/Papel Name)
+        if query:
+            orders = orders.filter(insumo__icontains=query)
+            
+        # Filter by Provider
+        if provider:
+            orders = orders.filter(proveedor__icontains=provider)
+            
+        results = orders
+
+    context = {
+        'results': results,
+        'query': query,
+        'provider': provider,
+        'months': months
+    }
+    return render(request, 'core/historial.html', context)

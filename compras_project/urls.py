@@ -18,6 +18,8 @@ urlpatterns = [
     path('registrar-compra/', views.registrar_compra, name='registrar_compra'),
     path('orden-compra/<int:compra_id>/', views.orden_compra_view, name='orden_compra'),
     path('eliminar-orden/<int:compra_id>/', views.delete_compra, name='delete_compra'),
+    path('ordenes/', views.ordenes_list_view, name='ordenes_lista'),
+    path('historial/', views.historial_view, name='historial'),
 ]
 
 if settings.DEBUG:

@@ -20,6 +20,15 @@
                 </div>
             </div>
 
+            <!-- 2. Cantidad (New) -->
+            <div class="card-input">
+                <label>Cantidad</label>
+                <div class="input-box">
+                    <i class='bx bxs-calculator'></i>
+                    <input type="number" id="qty-input" placeholder="1" value="1" min="1" required>
+                </div>
+            </div>
+
             <!-- 3. Proveedor -->
             <div class="card-input">
                 <label>Proveedor</label>
@@ -40,7 +49,7 @@
 
             <!-- 5. Precio -->
             <div class="card-input">
-                <label>Precio</label>
+                <label>Precio Final</label>
                 <div class="input-box">
                     <i class='bx bxs-dollar-circle'></i>
                     <input type="number" placeholder="0.00" required>
@@ -73,7 +82,8 @@
         <h2>Compra Exitosa</h2>
         <p>La orden ha sido registrada correctamente.</p>
 
-        <button class="btn-order">Orden de compra</button>
+        <a id="btn-view-insumo-order" href="#" class="btn-order"
+            style="text-decoration: none; display: inline-block; text-align: center;">Orden de compra</a>
 
         <a href="{% url 'nueva_compra' %}" class="btn-back">
             Volver
@@ -104,12 +114,16 @@
         }
 
         // Collect Data
+        const itemInput = document.querySelector('input[placeholder="Ej: Toner Negro"]').value;
+        const qtyInput = document.getElementById('qty-input').value || "1";
+
         const data = {
-            insumo: document.querySelector('input[placeholder="Ej: Toner Negro"]').value,
+            insumo: `${itemInput} (x${qtyInput})`,
             proveedor: document.querySelector('input[placeholder="Empresa proveedora"]').value,
             marca: document.querySelector('input[placeholder="Ej: HP, Epson"]').value,
             precio: document.querySelector('input[placeholder="0.00"]').value,
-            observaciones: document.querySelector('textarea').value
+            observaciones: document.querySelector('textarea').value,
+            tipo: 'INSUMO'
         };
 
         // Send Data
@@ -123,14 +137,18 @@
         })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
+                if (data.status === 'success' && data.id) {
+                    // Update the View Order button link
+                    const btn = document.getElementById('btn-view-insumo-order');
+                    btn.href = `/orden-compra/${data.id}/`;
+
                     // Show Popup
                     document.querySelector('.content-container').classList.add('blur-active');
                     document.querySelector('#sidebar').classList.add('blur-active');
                     document.querySelector('nav').classList.add('blur-active');
                     document.getElementById('success-popup').classList.add('active');
                 } else {
-                    alert('Error al guardar: ' + data.message);
+                    alert('Error al guardar: ' + (data.message || 'Unknown'));
                 }
             })
             .catch(error => {
