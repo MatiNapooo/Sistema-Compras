@@ -53,9 +53,8 @@
                     <span class="text">Ordenes</span>
                 </a>
             </li>
-            <li class="{% if request.resolver_match.url_name == 'historial' %}active{% endif %}">
-                <a href="{% url 'historial' %}">
-                    <i class='bx bxs-time-five bx-sm'></i>
+            <li>
+                <a href="{% url 'historial' %}"> <i class='bx bxs-message-dots bx-sm'></i>
                     <span class="text">Historial</span>
                 </a>
             </li>

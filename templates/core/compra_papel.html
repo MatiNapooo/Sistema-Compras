@@ -128,39 +128,31 @@
 </div>
 
 <script>
-    // Lista de proveedores
     const suppliers = ['Dimagraf', 'Cava', 'Resmacon', 'Gravent', 'Castinver', 'Hutton', 'Stenfar', 'Pergamino', 'Tucuman'];
 
-    // Configuración del dólar (segura)
     let dolarRate = 0;
     try {
         let dolarStr = "{{ dolar.venta|default:'0' }}".toString();
-        // Backend usually sends 1200 or 1200.50 (number or string with dot)
-        // If it sends '1.200,50' (Argentine format), we need to fix it.
-        // Step 1: Remove thousands separator (dots) if present AND there is a comma later
+        // Backend '1200' -> 1200
+        // Backend '1.200,50' (Arg) -> Limpiar puntos mil, coma a punto decimal
         if (dolarStr.includes('.') && dolarStr.includes(',')) {
             dolarStr = dolarStr.replace(/\./g, '');
-        } else if (dolarStr.includes(',') && !dolarStr.includes('.')) {
-            // Just comma decimal, no thousands
         }
-
-        // Step 2: Replace comma with dot for JS
         dolarStr = dolarStr.replace(',', '.');
-
-        dolarRate = parseFloat(dolarStr);
-        if (isNaN(dolarRate)) dolarRate = 0;
-        console.log("Cotización Dolar Parsed:", dolarRate);
+        dolarRate = parseFloat(dolarStr) || 0;
     } catch (e) {
-        console.error("Error al leer dolar:", e);
+        console.error("Error dolar:", e);
     }
 
     let currentSupplier = null;
     let currentTotal = 0;
     let currentQty = 1;
-    let rawReamWeight = 0; // Variable global para el peso exacto
+    let rawReamWeight = 0;
 
-    // Función auxiliar para leer números (acepta comas y puntos como separadores)
-    // Objetivo: "1.000,50" -> 1000.50 | "1,000.50" -> 1000.50 | "1000" -> 1000
+    // Función auxiliar para leer números (Estricto ARGENTINA: Punto=Mil, Coma=Decimal)
+    // "1.200,50" -> 1200.50
+    // "1.200" -> 1200
+    // "1,5" -> 1.5
     function parseInputNumber(id) {
         const input = document.getElementById(id);
         if (!input) return 0;
@@ -168,109 +160,53 @@
         if (!val) return 0;
         val = val.toString();
 
-        // 1. Si tiene puntos y comas, asumimos formato AR/EU (1.000,50) O US (1,000.50)
-        // Heurística simple: el último separador es el decimal.
-        const lastDot = val.lastIndexOf('.');
-        const lastComma = val.lastIndexOf(',');
-
-        if (lastDot > -1 && lastComma > -1) {
-            if (lastComma > lastDot) {
-                // Formato: 1.000,50 (AR) -> Quitar puntos, cambiar coma por punto
-                val = val.replace(/\./g, '').replace(',', '.');
-            } else {
-                // Formato: 1,000.50 (US) -> Quitar comas
-                val = val.replace(/,/g, '');
-            }
-        } else if (lastComma > -1) {
-            // Solo comas: "10,5" -> 10.5 | "1,000" -> 1000? 
-            // Asumimos coma es decimal SIEMPRE en este contexto, salvo que sea conflicto.
-            // Para evitar líos: reemplazamos coma por punto.
-            val = val.replace(',', '.');
-        }
-        // Si solo tiene puntos ("1.000"), JS lo toma como 1.
-        // Pero si el usuario tipea "1.000" para mil, queremos 1000.
-        // SOLUCIÓN: inputs type="number" suelen manejar esto, pero si es type="text"...
-        // Aquí asumimos que si hay puntos, son miles si no hay float? No, muy arriesgado.
-
-        // MEJOR APROXIMACION para inputs manuales:
-        // Removemos todos los puntos de miles (si parece ser separador de miles)
-        // Esto es complejo. Simplifiquemos:
-        // Parseamos directo reemplazando comas por puntos.
-
-        // NUEVA ESTRATEGIA ROBUSTA:
-        // Eliminar puntos de mil (si hay coma después).
-        // "45.000,00" -> Remove . -> "45000,00" -> Replace , -> "45000.00"
-
-        // Limpiar caracteres no numéricos excepto , y .
-        val = val.replace(/[^0-9,.-]/g, '');
-
-        if (val.indexOf('.') !== -1 && val.indexOf(',') !== -1) {
-            val = val.replace(/\./g, '').replace(',', '.');
-        } else if (val.indexOf(',') !== -1) {
-            val = val.replace(',', '.');
-        }
+        // 1. Eliminar puntos de miles
+        val = val.replace(/\./g, '');
+        // 2. Reemplazar coma decimal por punto
+        val = val.replace(',', '.');
 
         return parseFloat(val) || 0;
     }
 
-    // 1. Calcular Peso de la Resma
     function calculateWeight() {
         const w = parseInputNumber('format-w');
         const h = parseInputNumber('format-h');
         const g = parseInputNumber('grammage');
-
-        // Fórmula: (Ancho * Alto * Gramaje) / 20.000 (o 10.000 para gramaje m2?)
-        // Asumo fórmula estándar de imprenta: (cm x cm x gr) / 20000 = kg resma
         rawReamWeight = (w * h * g) / 20000;
-
-        // Mostrar en el input de solo lectura
         const displayWeight = rawReamWeight.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
         document.getElementById('ream-weight').value = displayWeight;
-
-        console.log(`Calculando: ${w}x${h}x${g} = ${rawReamWeight}kg`);
         return rawReamWeight;
     }
 
-    // Escuchar cambios en los inputs para recalcular en vivo
     ['format-w', 'format-h', 'grammage'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => {
             calculateWeight();
-            // Si la tabla ya está visible, actualizar sus cuentas también
             if (document.getElementById('suppliers-section').style.display !== 'none') {
                 updateTableCalculations();
             }
         });
     });
 
-    // 2. Mostrar la Tabla (Función del botón "Siguiente")
     function revealTable() {
         try {
-            // Aseguramos que el cálculo esté hecho
             calculateWeight();
-
-            // Validación simple
             if (rawReamWeight <= 0 || isNaN(rawReamWeight)) {
-                alert('Por favor completa las medidas y el gramaje correctamente (evita usar 0).');
+                alert('Por favor completa las medidas y el gramaje correctamente.');
                 return;
             }
-
             const tbody = document.getElementById('supplier-rows');
-
-            // LIMPIEZA FORZADA: Borramos lo que haya para regenerar limpio
             tbody.innerHTML = '';
 
-            console.log("Generando filas para proveedores...");
-
-            // Generar filas
             suppliers.forEach((name, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><span style="font-weight: 600;">${name}</span></td>
                     <td><span class="row-weight">0.00</span></td>
                     <td>
+                        <!-- CHANGED to type="text" to allow user to type '1.200,50' comfortably -->
                         <div class="input-box" style="width: 120px; padding: 5px 10px;">
                             <span style="margin-right: 5px;">$</span>
-                            <input type="number" class="price-input" placeholder="0.00">
+                            <input type="text" class="price-input" placeholder="0,000" inputmode="decimal">
                         </div>
                     </td>
                     <td>
@@ -327,90 +263,60 @@
                 tbody.appendChild(tr);
             });
 
-            // Agregar eventos a los nuevos inputs generados
             tbody.querySelectorAll('.price-input, .dolar-toggle, .qty-input').forEach(el => {
                 el.addEventListener('input', updateTableCalculations);
                 el.addEventListener('change', updateTableCalculations);
             });
 
-            // Mostrar la sección visualmente
-            const section = document.getElementById('suppliers-section');
-            section.style.display = 'block';
-
-            // Actualizar los números de la tabla recién creada
+            document.getElementById('suppliers-section').style.display = 'block';
             updateTableCalculations();
-
-            // Scroll suave hacia la tabla
-            setTimeout(() => {
-                section.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+            setTimeout(() => { document.getElementById('suppliers-section').scrollIntoView({ behavior: 'smooth' }); }, 100);
 
         } catch (e) {
-            alert("Error mostrando tabla: " + e.message);
             console.error(e);
         }
     }
 
-    // 3. Actualizar Cálculos de la Tabla
     function updateTableCalculations() {
         const weight = rawReamWeight;
 
         document.querySelectorAll('#supplier-rows tr').forEach(row => {
-            // Actualizar columna Peso (visual)
             row.querySelector('.row-weight').innerText = weight.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
             const priceInput = row.querySelector('.price-input');
-            // 1. Obtener precio por Kg ingresado
-            // Usamos la misma lógica: input puede tener puntos de mil y coma decimal.
-            // Limpiamos puntos, cambiamos coma por punto.
+            const toggle = row.querySelector('.dolar-toggle');
+            const qtyInput = row.querySelector('.qty-input');
+
+            // Lógica de PARSEO MANUAL para permitir formato AR (1.200,55)
             let rawPrice = priceInput.value || "0";
-            rawPrice = rawPrice.replace(/\./g, '').replace(',', '.');
+            rawPrice = rawPrice.toString().replace(/\./g, '').replace(',', '.'); // Quitamos puntos mil, coma a punto float
             let pricePerKgInput = parseFloat(rawPrice) || 0;
 
-            // 2. Determinar precio en PESOS (convertir si es dolar)
             let pricePerKgFinal = pricePerKgInput;
-
-            // Si el toggle está APAGADO (unchecked), el input es en DOLARES -> Convertimos a PESOS
-            // Si el toggle está ENCENDIDO (checked), el input es en PESOS -> Directo
-            if (!toggle.checked && dolarRate > 0) {
-                pricePerKgFinal = pricePerKgInput * dolarRate;
+            if (!toggle.checked) {
+                // USD (unchecked) -> Convertir a ARS
+                if (dolarRate > 0) pricePerKgFinal = pricePerKgInput * dolarRate;
             }
+            // else: Checked -> ARS Directo (pricePerKgFinal = pricePerKgInput)
 
-            // 3. Calcular Precio Resma (En PESOS)
             let reamPrice = weight * pricePerKgFinal;
-
-            // 4. Calcular Total Final (Precio Resma * Cantidad)
             let qty = parseInt(qtyInput.value) || 1;
             let total = reamPrice * qty;
 
-            // 5. Renderizar
-            // Precio Resma siempre en pesos (o moneda base del sistema)
-            reamPriceSpan.innerText = '$ ' + reamPrice.toLocaleString('es-AR', { minimumFractionDigits: 2 });
-
-            // Total Final en pesos
-            totalSpan.innerText = '$ ' + total.toLocaleString('es-AR', { minimumFractionDigits: 2 });
-
-            // Debug para el usuario
-            // console.log(`Input: ${pricePerKgInput}, Rate: ${dolarRate}, IsUSD: ${toggle.checked} -> FinalKg: ${pricePerKgFinal}`);
+            row.querySelector('.row-ream-price').innerText = '$ ' + reamPrice.toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+            row.querySelector('.row-total').innerText = '$ ' + total.toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
         });
     }
 
-    // 4. Confirmar Compra (Popup)
     function confirmPurchase(name, btn) {
-        // Buscamos la fila correspondiente al botón clickeado
         const row = btn.closest('tr');
         const price = row.querySelector('.price-input').value;
         const qty = row.querySelector('.qty-input').value;
-
-        if (!price || !qty) {
-            alert('Por favor ingresa un precio y una cantidad.');
-            return;
-        }
+        if (!price || !qty) { alert('Preciso y cantidad requeridos.'); return; }
 
         currentSupplier = name;
-        currentTotal = row.querySelector('.row-total').innerText; // Guardamos el texto final (ej: "$ 1500.00")
+        currentTotal = row.querySelector('.row-total').innerText;
         currentQty = qty;
-
         document.getElementById('popup-message').innerText = `¿Seguro quieres comprar ${qty} resma(s) a ${name}?`;
         document.getElementById('confirm-popup').classList.add('active');
         document.querySelector('.content-container').classList.add('blur-active');
@@ -421,7 +327,6 @@
         document.querySelector('.content-container').classList.remove('blur-active');
     }
 
-    // 5. Enviar al Backend
     function submitPurchase() {
         const paperType = document.getElementById('paper-type').value;
         const w = document.getElementById('format-w').value;
@@ -429,9 +334,7 @@
         const g = document.getElementById('grammage').value;
         const obs = document.getElementById('observations').value;
 
-        // Limpiar el total para guardar solo el numero (quitamos $ o USD)
-        // Corregido: Eliminar primero los puntos de mil, luego cambiar coma decimal por punto.
-        // Ejemplo: "7.400.000,00" -> "7400.000,00" (replace dots) -> "7400000.00" (replace comma)
+        // Limpiar el total string "$ 1.200,50" -> 1200.50
         let cleanText = currentTotal.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
         let numericPrice = parseFloat(cleanText);
 
@@ -446,33 +349,19 @@
 
         fetch("{% url 'registrar_compra' %}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
             body: JSON.stringify(data)
-        })
-            .then(r => r.json())
-            .then(d => {
-                if (d.status === 'success' && d.id) {
-                    closePopup();
-
-                    // Update the "Ver Orden" link with the returned ID
-                    const viewOrderBtn = document.getElementById('btn-view-order');
-                    // Construct URL manually for the ID
-                    viewOrderBtn.href = `/orden-compra/${d.id}/`;
-
-                    document.getElementById('success-popup').classList.add('active');
-                } else {
-                    alert('Error del servidor: ' + (d.message || 'Unknown'));
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Error de conexión al guardar.');
-            });
+        }).then(r => r.json()).then(d => {
+            if (d.status === 'success' && d.id) {
+                closePopup();
+                document.getElementById('btn-view-order').href = `/orden-compra/${d.id}/`;
+                document.getElementById('success-popup').classList.add('active');
+            } else {
+                alert('Error: ' + d.message);
+            }
+        });
     }
 </script>
 
-<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.3">
 {% endblock %}

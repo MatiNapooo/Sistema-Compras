@@ -191,21 +191,30 @@ def historial_view(request):
     # Get query parameters
     query = request.GET.get('q', '')
     provider = request.GET.get('provider', '')
-    months = request.GET.get('months', '')
+    date_range = request.GET.get('date_range', '') # Expecting "YYYY-MM-DD to YYYY-MM-DD"
     
     results = []
     
-    if request.method == 'GET' and (query or provider or months):
+    # Only search if we have at least one filter active
+    if request.method == 'GET' and (query or provider or date_range):
         orders = Compra.objects.all().order_by('-fecha')
         
-        # Filter by Time
-        if months and months != 'all':
+        # Filter by Date Range (Flatpickr format: "2023-01-01 to 2023-01-31")
+        if date_range:
             try:
-                days = int(months) * 30
-                start_date = datetime.now() - timedelta(days=days)
-                orders = orders.filter(fecha__gte=start_date)
+                if " to " in date_range:
+                    start_str, end_str = date_range.split(" to ")
+                    start_date = datetime.strptime(start_str, "%Y-%m-%d")
+                    # Set end date to end of day (23:59:59)
+                    end_date = datetime.strptime(end_str, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
+                else:
+                    # Single date selected
+                    start_date = datetime.strptime(date_range, "%Y-%m-%d")
+                    end_date = start_date + timedelta(days=1) - timedelta(seconds=1)
+
+                orders = orders.filter(fecha__range=(start_date, end_date))
             except ValueError:
-                pass # Ignore invalid month values
+                pass # Ignore invalid date formats
         
         # Filter by Query (Insumo/Papel Name)
         if query:
@@ -221,6 +230,6 @@ def historial_view(request):
         'results': results,
         'query': query,
         'provider': provider,
-        'months': months
+        'date_range': date_range
     }
     return render(request, 'core/historial.html', context)

@@ -2,153 +2,374 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/historial.css' %}">
+<!-- FLATPICKR CSS (Date Picker) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Custom Theme for Flatpickr (Optional, darker) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 
-<div class="head-title">
-    <div class="left">
-        <h1>Historial de Compras</h1>
+<div class="content-container">
+    <div class="head-title">
+        <div class="left">
+            <h1>Historial de Compras</h1>
+        </div>
     </div>
-</div>
 
-<div class="history-container">
-
-    <!-- Search Section -->
-    <form method="GET" action="{% url 'historial' %}" id="historyForm" onsubmit="return validateForm()">
+    <!-- SEARCH SECTION (Glassmorphism Cards) -->
+    <form method="GET" action="{% url 'historial' %}" class="history-search-form" id="searchForm">
         <div class="search-grid">
-            <!-- Query Card -->
+
+            <!-- 1. PRODUCTO -->
             <div class="search-card">
                 <div class="card-icon">
-                    <i class='bx bxs-component'></i>
+                    <i class='bx bx-search-alt'></i>
                 </div>
                 <div class="card-content">
                     <label>¿Qué buscamos?</label>
-                    <input type="text" name="q" placeholder="Ej: Tinta Amarilla, Papel Obra..." value="{{ query }}">
+                    <input type="text" name="q" placeholder="Ej: Papel Ilustrativo..." value="{{ query }}">
                 </div>
             </div>
 
-            <!-- Provider Card -->
+            <!-- 2. PROVEEDOR -->
             <div class="search-card">
                 <div class="card-icon">
-                    <i class='bx bxs-truck'></i>
+                    <i class='bx bxs-store'></i>
                 </div>
                 <div class="card-content">
                     <label>Proveedor</label>
-                    <input type="text" name="provider" placeholder="Ej: Stenfard..." value="{{ provider }}">
+                    <input type="text" name="provider" placeholder="Ej: Dimagraf..." value="{{ provider }}">
                 </div>
             </div>
-        </div>
 
-        <!-- Time Span Selector -->
-        <div class="time-selector-container">
-            <h3>Lapso de Tiempo (Requerido)</h3>
-            <div class="time-chips">
-                <label class="time-chip">
-                    <input type="radio" name="months" value="1" {% if months=='1' %}checked{% endif %}>
-                    <span>1 Mes</span>
-                </label>
-                <label class="time-chip">
-                    <input type="radio" name="months" value="3" {% if months=='3' %}checked{% endif %}>
-                    <span>3 Meses</span>
-                </label>
-                <label class="time-chip">
-                    <input type="radio" name="months" value="6" {% if months=='6' %}checked{% endif %}>
-                    <span>6 Meses</span>
-                </label>
-                <label class="time-chip">
-                    <input type="radio" name="months" value="12" {% if months=='12' %}checked{% endif %}>
-                    <span>1 Año</span>
-                </label>
-                <label class="time-chip">
-                    <input type="radio" name="months" value="all" {% if months=='all' %}checked{% endif %}>
-                    <span>Todo</span>
-                </label>
+            <!-- 3. FECHA (DATE RANGE PICKER) -->
+            <div class="search-card date-card">
+                <div class="card-icon">
+                    <i class='bx bx-calendar'></i>
+                </div>
+                <div class="card-content">
+                    <label>Rango de Fechas</label>
+                    <input type="text" id="dateRangeInput" name="date_range" placeholder="Seleccionar fechas..."
+                        value="{{ date_range }}" readonly>
+                </div>
             </div>
-        </div>
 
-        <!-- Action Button -->
-        <div class="action-container">
-            <button type="submit" class="search-btn-main">
-                <i class='bx bx-search-alt'></i> Buscar Historial
+            <!-- BUTTON -->
+            <button type="submit" class="btn-search-viz">
+                <i class='bx bx-filter-alt'></i> Buscar
             </button>
         </div>
     </form>
 
-    <!-- Results Table -->
+    <!-- RESULTS TABLE -->
     {% if results %}
-    <div class="history-results">
-        <div class="table-data">
-            <div class="order">
-                <div class="head">
-                    <h3>Resultados</h3>
-                    <i class='bx bx-filter'></i>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Producto</th>
-                            <th>Proveedor</th>
-                            <th>Detalles</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for orden in results %}
-                        <tr>
-                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                            <td>
-                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
-                                <p>{{ orden.pedido_por }}</p>
-                            </td>
-                            <td>{{ orden.insumo }}</td>
-                            <td>{{ orden.proveedor|default:"-" }}</td>
-                            <td class="details-cell">
-                                {% if orden.tipo == 'PAPEL' %}
-                                <span class="badge-detail">Gramaje: {{ orden.gramaje }}gr</span>
-                                <span class="badge-detail">Formato: {{ orden.formato }}</span>
-                                {% else %}
-                                <span class="badge-simple">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'orden_compra' orden.id %}" class="status completed">
-                                    <i class='bx bxs-file-find'></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="table-data fade-in-up">
+        <div class="order">
+            <div class="head">
+                <h3>Resultados ({{ results|length }})</h3>
             </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Producto / Insumo</th>
+                        <th>Proveedor</th>
+                        <th>Detalles</th> <!-- Gramaje/Formato for Paper -->
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in results %}
+                    <tr>
+                        <td>{{ order.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-icon">
+                                    <span style="font-weight:bold; color: white;">{{ order.pedido_por|first|upper
+                                        }}</span>
+                                </div>
+                                <span>{{ order.pedido_por }}</span>
+                            </div>
+                        </td>
+                        <td style="font-weight: 600;">{{ order.insumo }}</td>
+                        <td><span class="status completed">{{ order.proveedor }}</span></td>
+
+                        <!-- DETAILS COLUMN -->
+                        <td>
+                            {% if order.tipo == 'PAPEL' %}
+                            <span style="font-size: 0.85em; color: var(--dark-grey);">
+                                {{ order.observaciones|default:"-" }}
+                            </span>
+                            {% else %}
+                            <span style="color: #ccc;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="{% url 'orden_compra' order.id %}" class="status pending"
+                                style="text-decoration: none;">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-    {% elif request.GET.months %} <!-- Only show if search was attempted -->
-    <div class="no-results">
-        <i class='bx bx-search-alt'></i>
-        <p>No se encontraron resultados con esos criterios.</p>
+    {% elif query or provider or date_range %}
+    <div class="no-results fade-in-up">
+        <i class='bx bx-search-x'></i>
+        <p>No se encontraron resultados con estos filtros.</p>
+    </div>
+    {% else %}
+    <!-- EMPTY STATE -->
+    <div class="empty-state fade-in-up">
+        <i class='bx bx-time-five'></i>
+        <h3>Historial de Compras</h3>
+        <p>Selecciona un rango de fechas y filtros para consultar órdenes pasadas.</p>
     </div>
     {% endif %}
 
 </div>
 
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script> <!-- Spanish Locale -->
+
 <script>
-    function validateForm() {
-        const query = document.querySelector('input[name="q"]').value;
-        const provider = document.querySelector('input[name="provider"]').value;
-        const months = document.querySelector('input[name="months"]:checked');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Flatpickr with nice animation
+        flatpickr("#dateRangeInput", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "j F, Y",
+            locale: "es",
+            animate: true,
+            disableMobile: "true",
+        });
 
-        if (!months) {
-            alert("Por favor, selecciona un lapso de tiempo.");
-            return false;
-        }
+        const form = document.getElementById('searchForm');
+        form.addEventListener('submit', function (e) {
+            const q = form.querySelector('[name="q"]').value.trim();
+            const provider = form.querySelector('[name="provider"]').value.trim();
+            const dateParams = form.querySelector('[name="date_range"]').value.trim();
 
-        if (!query && !provider) {
-            alert("Debes llenar al menos un campo de búsqueda (Insumo o Proveedor).");
-            return false;
-        }
-
-        return true;
-    }
+            if (!q && !provider && !dateParams) {
+                e.preventDefault();
+                alert("Por favor, ingresa al menos un criterio de búsqueda.");
+            }
+        });
+    });
 </script>
+
+<style>
+    /* LOCAL STYLES */
+    .history-search-form {
+        margin-bottom: 30px;
+    }
+
+    .search-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.2fr auto;
+        gap: 20px;
+        align-items: stretch;
+    }
+
+    /* GLASS CARDS */
+    .search-card {
+        background: var(--light);
+        border-radius: 20px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .search-card:focus-within {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+        border-color: var(--blue);
+    }
+
+    .search-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--grey);
+        transition: 0.3s;
+    }
+
+    .search-card:focus-within::after {
+        background: var(--blue);
+    }
+
+    .card-icon {
+        width: 45px;
+        height: 45px;
+        background: var(--light-blue);
+        color: var(--blue);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .card-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-content label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--dark-grey);
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .card-content input {
+        border: none;
+        background: transparent;
+        font-size: 15px;
+        color: var(--dark);
+        outline: none;
+        width: 100%;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .date-card .card-icon {
+        background: var(--light-orange);
+        color: var(--orange);
+    }
+
+    .date-card:focus-within::after {
+        background: var(--orange);
+    }
+
+    .btn-search-viz {
+        background: var(--blue);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 0 30px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.3s;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        height: 100%;
+    }
+
+    .btn-search-viz:hover {
+        background: var(--dark-blue, #0C4DA2);
+        transform: scale(1.02);
+    }
+
+    .user-avatar-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--blue), var(--light-blue));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-results,
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--dark-grey);
+    }
+
+    .no-results i,
+    .empty-state i {
+        font-size: 60px;
+        color: var(--grey);
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* FLATPICKR THEME */
+    .flatpickr-calendar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .flatpickr-month {
+        background: transparent;
+        color: var(--dark);
+        fill: var(--dark);
+        height: 50px;
+    }
+
+    .flatpickr-current-month span.cur-month {
+        font-weight: 700;
+        color: var(--blue);
+    }
+
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange,
+    .flatpickr-day:hover {
+        background: var(--blue);
+        border-color: var(--blue);
+    }
+
+    .flatpickr-day.inRange {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: transparent;
+        color: var(--blue);
+    }
+
+    @media (max-width: 900px) {
+        .search-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .search-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-search-viz {
+            height: 50px;
+        }
+    }
+</style>
 {% endblock %}
