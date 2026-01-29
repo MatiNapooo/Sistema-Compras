@@ -226,7 +226,10 @@ def historial_view(request):
             
         results = orders
 
+    ordenes = Compra.objects.select_related('usuario__profile').all().order_by('-fecha')
+  
     context = {
+        'ordenes': ordenes,
         'results': results,
         'query': query,
         'provider': provider,

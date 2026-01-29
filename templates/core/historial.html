@@ -78,38 +78,29 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for order in results %}
+                    {% for orden in ordenes %}
                     <tr>
-                        <td>{{ order.fecha|date:"d/m/Y H:i" }}</td>
                         <td>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <div class="user-avatar-icon">
-                                    <span style="font-weight:bold; color: white;">{{ order.pedido_por|first|upper
-                                        }}</span>
-                                </div>
-                                <span>{{ order.pedido_por }}</span>
+                                {% if orden.usuario.profile.image %}
+                                <img src="{{ orden.usuario.profile.image.url }}" alt="User"
+                                    style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ orden.usuario.username }}&background=random"
+                                    style="width: 35px; height: 35px; border-radius: 50%;">
+                                {% endif %}
+                                <span style="font-weight: 600;">{{ orden.usuario.username|title }}</span>
                             </div>
                         </td>
-                        <td style="font-weight: 600;">{{ order.insumo }}</td>
-                        <td><span class="status completed">{{ order.proveedor }}</span></td>
-
-                        <!-- DETAILS COLUMN -->
-                        <td>
-                            {% if order.tipo == 'PAPEL' %}
-                            <span style="font-size: 0.85em; color: var(--dark-grey);">
-                                {{ order.observaciones|default:"-" }}
-                            </span>
-                            {% else %}
-                            <span style="color: #ccc;">-</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <a href="{% url 'orden_compra' order.id %}" class="status pending"
-                                style="text-decoration: none;">
-                                Ver
-                            </a>
-                        </td>
+                        <td>{{ orden.fecha|date:"d/m/Y" }}</td>
+                        <td><span class="status completed">Completado</span></td>
+                        <td>{{ orden.proveedor }}</td>
+                        <td>{{ orden.insumo }}</td>
+                        <td>$ {{ orden.total|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 20px;">No hay compras registradas aún.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

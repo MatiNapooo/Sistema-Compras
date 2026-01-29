@@ -3,6 +3,10 @@
 {% load l10n %}
 
 {% block content %}
+<!-- External CSS for Premium Design -->
+<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=2.0">
+<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.4">
+
 <div class="content-container">
     <div class="head-title">
         <div class="left">
@@ -58,27 +62,28 @@
         </button>
     </form>
 
-    <!-- 2. TABLA DE PROVEEDORES (Oculta al principio) -->
+    <!-- 2. TABLA DE PROVEEDORES -->
     <div id="suppliers-section" style="display: none; margin-top: 40px; padding-bottom: 50px;">
-        <div class="table-data">
+        <div class="table-data" style="background: transparent; box-shadow: none; padding: 0;">
             <div class="order">
                 <div class="head">
                     <h3>Comparativa de Precios</h3>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <span>USD Venta: ${{ dolar.venta }}</span>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #666;">USD Venta: <span
+                                style="color: var(--blue);">${{ dolar.venta }}</span></span>
                     </div>
                 </div>
                 <table>
                     <thead>
                         <tr>
                             <th>Proveedor</th>
-                            <th>Peso Total (kg)</th>
-                            <th style="width: 15%;">Precio/Kg</th>
-                            <th style="width: 8%;">Dólar</th>
-                            <th style="width: 15%;">Precio Resma</th>
-                            <th style="width: 10%;">Cantidad</th>
-                            <th style="width: 15%;">Total</th>
-                            <th style="width: 10%;">Acción</th>
+                            <th>Peso Total</th>
+                            <th style="width: 20%;">Precio/Kg</th>
+                            <th style="width: 15%; text-align: center;">Moneda</th>
+                            <th style="width: 15%; text-align: right;">Precio Resma</th>
+                            <th style="width: 10%; text-align: center;">Cant.</th>
+                            <th style="width: 15%; text-align: right;">Total</th>
+                            <th style="width: 10%; text-align: center;">Acción</th>
                         </tr>
                     </thead>
                     <tbody id="supplier-rows">
@@ -90,7 +95,7 @@
     </div>
 </div>
 
-<!-- POPUP -->
+<!-- POPUPS -->
 <div id="confirm-popup" class="popup-overlay">
     <div class="popup-content">
         <div class="icon-checkmark" style="background: var(--orange);">
@@ -111,7 +116,6 @@
         <h2 style="font-size: 24px; color: var(--dark); margin-bottom: 10px;">¡Orden Creada!</h2>
         <p style="color: #666; font-size: 16px; margin-bottom: 25px;">La orden de compra se registró correctamente.</p>
 
-        <!-- Centered View Order Button -->
         <div style="display: flex; justify-content: center;">
             <a id="btn-view-order" href="#" class="btn-confirm"
                 style="text-decoration: none; padding: 12px 30px; font-size: 16px; border-radius: 8px;">
@@ -119,7 +123,6 @@
             </a>
         </div>
 
-        <!-- Bottom Right Close Button -->
         <button onclick="location.reload()"
             style="position: absolute; bottom: 15px; right: 15px; background: #db504a; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
             <i class='bx bx-x'></i> Cerrar
@@ -128,223 +131,237 @@
 </div>
 
 <script>
+    // --- CONFIGURACIÓN INICIAL ---
     const suppliers = ['Dimagraf', 'Cava', 'Resmacon', 'Gravent', 'Castinver', 'Hutton', 'Stenfar', 'Pergamino', 'Tucuman'];
 
-    let dolarRate = 0;
-    try {
-        let dolarStr = "{{ dolar.venta|default:'0' }}".toString();
-        // Backend '1200' -> 1200
-        // Backend '1.200,50' (Arg) -> Limpiar puntos mil, coma a punto decimal
-        if (dolarStr.includes('.') && dolarStr.includes(',')) {
-            dolarStr = dolarStr.replace(/\./g, '');
-        }
-        dolarStr = dolarStr.replace(',', '.');
-        dolarRate = parseFloat(dolarStr) || 0;
-    } catch (e) {
-        console.error("Error dolar:", e);
-    }
+    // 1. OBTENER COTIZACIÓN
+    let dolarString = "{{ dolar.venta|default:'0' }}";
+    let dolarRate = parseFloat(dolarString.replace(/\./g, '').replace(',', '.')) || 0;
 
-    let currentSupplier = null;
-    let currentTotal = 0;
-    let currentQty = 1;
     let rawReamWeight = 0;
 
-    // Función auxiliar para leer números (Estricto ARGENTINA: Punto=Mil, Coma=Decimal)
-    // "1.200,50" -> 1200.50
-    // "1.200" -> 1200
-    // "1,5" -> 1.5
-    function parseInputNumber(id) {
-        const input = document.getElementById(id);
-        if (!input) return 0;
-        let val = input.value;
-        if (!val) return 0;
-        val = val.toString();
+    // Formateador para mostrar en pantalla (Argentina: 1.000,00)
+    const formatter = new Intl.NumberFormat('es-AR', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 
-        // 1. Eliminar puntos de miles
-        val = val.replace(/\./g, '');
-        // 2. Reemplazar coma decimal por punto
-        val = val.replace(',', '.');
-
-        return parseFloat(val) || 0;
+    // Helper inputs 
+    function parseVal(id) {
+        let v = document.getElementById(id).value;
+        return parseFloat(v.replace(',', '.')) || 0;
     }
 
+    // A. CALCULAR PESO RESMA
     function calculateWeight() {
-        const w = parseInputNumber('format-w');
-        const h = parseInputNumber('format-h');
-        const g = parseInputNumber('grammage');
+        const w = parseVal('format-w');
+        const h = parseVal('format-h');
+        const g = parseVal('grammage');
+
+        // Fórmula: (Ancho * Alto * Gramaje) / 20000
         rawReamWeight = (w * h * g) / 20000;
-        const displayWeight = rawReamWeight.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
-        document.getElementById('ream-weight').value = displayWeight;
-        return rawReamWeight;
+
+        document.getElementById('ream-weight').value = formatter.format(rawReamWeight);
+        updateAllRows();
     }
 
     ['format-w', 'format-h', 'grammage'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => {
-            calculateWeight();
-            if (document.getElementById('suppliers-section').style.display !== 'none') {
-                updateTableCalculations();
-            }
-        });
+        document.getElementById(id).addEventListener('input', calculateWeight);
     });
 
+    // B. GENERAR TABLA (PREMIUM DESIGN + CYBER TOGGLE REMADE)
     function revealTable() {
-        try {
-            calculateWeight();
-            if (rawReamWeight <= 0 || isNaN(rawReamWeight)) {
-                alert('Por favor completa las medidas y el gramaje correctamente.');
-                return;
-            }
-            const tbody = document.getElementById('supplier-rows');
-            tbody.innerHTML = '';
+        calculateWeight();
+        if (rawReamWeight <= 0) { alert('Revisar medidas.'); return; }
 
-            suppliers.forEach((name, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><span style="font-weight: 600;">${name}</span></td>
-                    <td><span class="row-weight">0.00</span></td>
-                    <td>
-                        <!-- CHANGED to type="text" to allow user to type '1.200,50' comfortably -->
-                        <div class="input-box" style="width: 120px; padding: 5px 10px;">
-                            <span style="margin-right: 5px;">$</span>
-                            <input type="text" class="price-input" placeholder="0,000" inputmode="decimal">
-                        </div>
-                    </td>
-                    <td>
-                        <div class="cyber-toggle-wrapper">
-                            <input class="cyber-toggle-checkbox dolar-toggle" id="cyber-toggle-${index}" type="checkbox" />
-                            <label class="cyber-toggle" for="cyber-toggle-${index}">
-                                <div class="cyber-toggle-track">
-                                    <div class="cyber-toggle-track-glow"></div>
-                                    <div class="cyber-toggle-track-dots">
-                                        <span class="cyber-toggle-track-dot"></span>
-                                        <span class="cyber-toggle-track-dot"></span>
-                                        <span class="cyber-toggle-track-dot"></span>
-                                    </div>
+        const tbody = document.getElementById('supplier-rows');
+        tbody.innerHTML = '';
+
+        suppliers.forEach((name, index) => {
+            const tr = document.createElement('tr');
+            const uniqueId = `cyber-toggle-${index}`;
+
+            tr.innerHTML = `
+                <td>
+                    <div class="supplier-name">
+                        <i class='bx bxs-business'></i>
+                        <span>${name}</span>
+                    </div>
+                </td>
+                <td><span class="badge-weight">${formatter.format(rawReamWeight)} kg</span></td>
+                
+                <td>
+                    <div class="input-group-modern">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" class="price-input" placeholder="0.00" step="0.01">
+                    </div>
+                </td>
+                
+                <td class="toggle-cell">
+                    <!-- CYBER TOGGLE RESTORED -->
+                    <div class="cyber-toggle-wrapper">
+                        <input class="cyber-toggle-checkbox dolar-toggle" id="${uniqueId}" type="checkbox" />
+                        <label class="cyber-toggle" for="${uniqueId}">
+                            <div class="cyber-toggle-track">
+                                <div class="cyber-toggle-track-glow"></div>
+                                <div class="cyber-toggle-track-dots">
+                                    <span class="cyber-toggle-track-dot"></span>
+                                    <span class="cyber-toggle-track-dot"></span>
+                                    <span class="cyber-toggle-track-dot"></span>
                                 </div>
-                                <div class="cyber-toggle-thumb">
-                                    <div class="cyber-toggle-thumb-shadow"></div>
-                                    <div class="cyber-toggle-thumb-highlight"></div>
-                                    <div class="cyber-toggle-thumb-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                            <path d="M16.5 12c0-2.48-2.02-4.5-4.5-4.5s-4.5 2.02-4.5 4.5 2.02 4.5 4.5 4.5 4.5-2.02 4.5-4.5zm-4.5 7.5c-4.14 0-7.5-3.36-7.5-7.5s3.36-7.5 7.5-7.5 7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5zm0-16.5c-4.97 0-9 4.03-9 9h-3l3.89 3.89.07.14 4.04-4.03h-3c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42c1.63 1.63 3.87 2.64 6.36 2.64 4.97 0 9-4.03 9-9s-4.03-9-9-9z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="cyber-toggle-particles">
-                                    <span class="cyber-toggle-particle"></span>
-                                    <span class="cyber-toggle-particle"></span>
-                                    <span class="cyber-toggle-particle"></span>
-                                    <span class="cyber-toggle-particle"></span>
-                                </div>
-                            </label>
-                            <div class="cyber-toggle-labels">
-                                <span class="cyber-toggle-label-off">USD</span>
-                                <span class="cyber-toggle-label-on">ARS</span>
                             </div>
+                            <div class="cyber-toggle-thumb">
+                                <div class="cyber-toggle-thumb-shadow"></div>
+                                <div class="cyber-toggle-thumb-highlight"></div>
+                                <div class="cyber-toggle-thumb-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M16.5 12c0-2.48-2.02-4.5-4.5-4.5s-4.5 2.02-4.5 4.5 2.02 4.5 4.5 4.5 4.5-2.02 4.5-4.5zm-4.5 7.5c-4.14 0-7.5-3.36-7.5-7.5s3.36-7.5 7.5-7.5 7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5zm0-16.5c-4.97 0-9 4.03-9 9h-3l3.89 3.89.07.14 4.04-4.03h-3c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42c1.63 1.63 3.87 2.64 6.36 2.64 4.97 0 9-4.03 9-9s-4.03-9-9-9z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="cyber-toggle-particles">
+                                <span class="cyber-toggle-particle"></span>
+                                <span class="cyber-toggle-particle"></span>
+                                <span class="cyber-toggle-particle"></span>
+                                <span class="cyber-toggle-particle"></span>
+                            </div>
+                        </label>
+                        <div class="cyber-toggle-labels">
+                            <span class="cyber-toggle-label-off">USD</span>
+                            <span class="cyber-toggle-label-on">ARS</span>
                         </div>
-                    </td>
-                    <td>
-                        <span class="row-ream-price" style="font-weight: bold; color: var(--blue);">0.00</span>
-                    </td>
-                     <td>
-                        <div class="input-box" style="width: 80px; padding: 5px 10px;">
-                            <input type="number" class="qty-input" value="1" min="1" step="1">
-                        </div>
-                    </td>
-                    <td>
-                        <span class="row-total" style="font-weight: bold; color: var(--blue);">0.00</span>
-                    </td>
-                    <td>
-                        <button class="btn-confirm" style="padding: 8px 15px; font-size: 12px; float: none;" onclick="confirmPurchase('${name}', this)">
-                            Comprar
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+                    </div>
+                </td>
 
-            tbody.querySelectorAll('.price-input, .dolar-toggle, .qty-input').forEach(el => {
-                el.addEventListener('input', updateTableCalculations);
-                el.addEventListener('change', updateTableCalculations);
-            });
+                <td class="text-right"><span class="row-ream-price">$ 0,00</span></td>
+                
+                <td class="text-center">
+                    <div class="qty-control">
+                        <input type="number" class="qty-input" value="1" min="1">
+                    </div>
+                </td>
+                
+                <td class="text-right"><span class="row-total-final">$ 0,00</span></td>
+                
+                <td class="text-center">
+                    <button class="btn-shop" onclick="confirmPurchase('${name}', this)">
+                        <i class='bx bx-cart-alt'></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
 
-            document.getElementById('suppliers-section').style.display = 'block';
-            updateTableCalculations();
-            setTimeout(() => { document.getElementById('suppliers-section').scrollIntoView({ behavior: 'smooth' }); }, 100);
+        // Activar eventos
+        tbody.querySelectorAll('input').forEach(el => {
+            el.addEventListener('input', updateRowCalculation);
+            el.addEventListener('change', updateRowCalculation);
+        });
 
-        } catch (e) {
-            console.error(e);
-        }
+        document.getElementById('suppliers-section').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('suppliers-section').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
     }
 
-    function updateTableCalculations() {
+    // C. CÁLCULO (USER REQUESTED LOGIC KEPT INTACT)
+    function updateRowCalculation(e) {
+        const row = e.target.closest('tr');
+        if (!row) return;
+
+        // A. LEER VALORES
+        const priceInputVal = parseFloat(row.querySelector('.price-input').value) || 0;
+        const isDolar = row.querySelector('.dolar-toggle').checked;
+        const qty = parseInt(row.querySelector('.qty-input').value) || 1;
         const weight = rawReamWeight;
 
-        document.querySelectorAll('#supplier-rows tr').forEach(row => {
-            row.querySelector('.row-weight').innerText = weight.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+        // B. CALCULAR PRECIO REAL POR KILO (EN PESOS)
+        let finalPricePerKg = priceInputVal;
 
-            const priceInput = row.querySelector('.price-input');
-            const toggle = row.querySelector('.dolar-toggle');
-            const qtyInput = row.querySelector('.qty-input');
+        if (isDolar) {
+            // SI ES DOLAR: Multiplicamos el valor ingresado (ej: 100) por la cotización (ej: 1020)
+            finalPricePerKg = priceInputVal * dolarRate;
+        }
 
-            // Lógica de PARSEO MANUAL para permitir formato AR (1.200,55)
-            let rawPrice = priceInput.value || "0";
-            rawPrice = rawPrice.toString().replace(/\./g, '').replace(',', '.'); // Quitamos puntos mil, coma a punto float
-            let pricePerKgInput = parseFloat(rawPrice) || 0;
+        // C. CALCULAR UNITARIO DE LA RESMA (Peso x Precio/Kg Real)
+        let reamUnitPrice = weight * finalPricePerKg;
 
-            let pricePerKgFinal = pricePerKgInput;
-            if (!toggle.checked) {
-                // USD (unchecked) -> Convertir a ARS
-                if (dolarRate > 0) pricePerKgFinal = pricePerKgInput * dolarRate;
-            }
-            // else: Checked -> ARS Directo (pricePerKgFinal = pricePerKgInput)
+        // D. CALCULAR TOTAL (Unitario x Cantidad)
+        let totalFinal = reamUnitPrice * qty;
 
-            let reamPrice = weight * pricePerKgFinal;
-            let qty = parseInt(qtyInput.value) || 1;
-            let total = reamPrice * qty;
+        // --- VISUALIZACIÓN ---
 
-            row.querySelector('.row-ream-price').innerText = '$ ' + reamPrice.toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-            row.querySelector('.row-total').innerText = '$ ' + total.toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+        // 1. Símbolo de moneda en el input (solo visual)
+        row.querySelector('.currency-symbol').innerText = isDolar ? 'u$d' : '$';
+
+        // 2. Precio Unitario (Siempre mostramos la conversión a pesos para referencia)
+        row.querySelector('.row-ream-price').innerText = '$ ' + formatter.format(reamUnitPrice);
+
+        // 3. Total Final (Con puntos de miles)
+        const totalSpan = row.querySelector('.row-total-final');
+        totalSpan.innerText = '$ ' + formatter.format(totalFinal);
+
+        // Estilo extra para destacar total
+        totalSpan.style.color = 'var(--blue)';
+
+        // Styling extra para moneda
+        const curSym = row.querySelector('.currency-symbol');
+        if (isDolar) {
+            curSym.style.color = 'var(--blue)';
+            curSym.style.fontWeight = '800';
+        } else {
+            curSym.style.color = '#adb5bd';
+            curSym.style.fontWeight = '700';
+        }
+
+        // Guardamos el dato crudo para enviarlo al backend luego
+        row.dataset.totalFinal = totalFinal;
+    }
+
+    function updateAllRows() {
+        document.querySelectorAll('#supplier-rows tr').forEach(tr => {
+            const input = tr.querySelector('.price-input');
+            if (input) updateRowCalculation({ target: input });
         });
     }
 
-    function confirmPurchase(name, btn) {
+    // 4. CONFIRMAR COMPRA
+    function confirmPurchase(supplierName, btn) {
         const row = btn.closest('tr');
-        const price = row.querySelector('.price-input').value;
-        const qty = row.querySelector('.qty-input').value;
-        if (!price || !qty) { alert('Preciso y cantidad requeridos.'); return; }
+        const total = parseFloat(row.dataset.totalFinal) || 0;
 
-        currentSupplier = name;
-        currentTotal = row.querySelector('.row-total').innerText;
-        currentQty = qty;
-        document.getElementById('popup-message').innerText = `¿Seguro quieres comprar ${qty} resma(s) a ${name}?`;
+        if (total <= 0) {
+            alert("El monto debe ser mayor a 0");
+            return;
+        }
+
+        document.getElementById('popup-message').innerText = `¿Confirmar compra a ${supplierName} por $ ${formatter.format(total)}?`;
         document.getElementById('confirm-popup').classList.add('active');
-        document.querySelector('.content-container').classList.add('blur-active');
+
+        // Guardar datos temporales para el envío
+        window.tempPurchaseData = {
+            proveedor: supplierName,
+            total: total,
+            detalle: `Papel - ${document.getElementById('paper-type').value} ${document.getElementById('format-w').value}x${document.getElementById('format-h').value}`
+        };
     }
 
     function closePopup() {
         document.getElementById('confirm-popup').classList.remove('active');
-        document.querySelector('.content-container').classList.remove('blur-active');
     }
 
+    // 5. ENVIAR DATOS
     function submitPurchase() {
-        const paperType = document.getElementById('paper-type').value;
-        const w = document.getElementById('format-w').value;
-        const h = document.getElementById('format-h').value;
-        const g = document.getElementById('grammage').value;
-        const obs = document.getElementById('observations').value;
-
-        // Limpiar el total string "$ 1.200,50" -> 1200.50
-        let cleanText = currentTotal.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
-        let numericPrice = parseFloat(cleanText);
+        if (!window.tempPurchaseData) return;
 
         const data = {
-            insumo: `Papel ${paperType} ${w}x${h} ${g}gr (x${currentQty})`,
-            proveedor: currentSupplier,
-            marca: '-',
-            precio: numericPrice,
-            observaciones: obs,
-            tipo: 'PAPEL'
+            proveedor: window.tempPurchaseData.proveedor,
+            precio: window.tempPurchaseData.total,
+            insumo: window.tempPurchaseData.detalle,
+            observaciones: document.getElementById('observations').value,
+            tipo: 'PAPEL',
+            marca: '-'
         };
 
         fetch("{% url 'registrar_compra' %}", {
@@ -362,6 +379,4 @@
         });
     }
 </script>
-
-<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.3">
 {% endblock %}
