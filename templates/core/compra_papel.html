@@ -4,18 +4,13 @@
 
 {% block content %}
 <!-- External CSS for Premium Design -->
-<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=2.0">
-<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.4">
+<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.5">
 
 <div class="content-container">
     <div class="head-title">
         <div class="left">
             <h1>Compra de Papel</h1>
-            <ul class="breadcrumb">
-                <li><a href="{% url 'nueva_compra' %}">Volver</a></li>
-                <li><i class='bx bx-chevron-right'></i></li>
-                <li><a class="active" href="#">Papel</a></li>
-            </ul>
         </div>
     </div>
 
@@ -340,10 +335,18 @@
         document.getElementById('confirm-popup').classList.add('active');
 
         // Guardar datos temporales para el envío
+        const qty = row.querySelector('.qty-input').value;
+        const type = document.getElementById('paper-type').value;
+        const w = document.getElementById('format-w').value;
+        const h = document.getElementById('format-h').value;
+        const g = document.getElementById('grammage').value;
+
+        // FORMATO EXACTO PARA REGEX BACKEND: Papel [Tipo] [Ancho]x[Alto] [Gram]gr (x[Cant])
+        // Regex: r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)"
         window.tempPurchaseData = {
             proveedor: supplierName,
             total: total,
-            detalle: `Papel - ${document.getElementById('paper-type').value} ${document.getElementById('format-w').value}x${document.getElementById('format-h').value}`
+            detalle: `Papel ${type} ${w}x${h} ${g}gr (x${qty})`
         };
     }
 

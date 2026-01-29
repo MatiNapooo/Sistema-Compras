@@ -8,6 +8,7 @@ import re
 from .models import Compra
 from django.http import JsonResponse
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 def login_view(request):
     if request.method == 'POST':
@@ -202,16 +203,26 @@ def historial_view(request):
         # Filter by Date Range (Flatpickr format: "2023-01-01 to 2023-01-31")
         if date_range:
             try:
+                # Handle separators: default ' to ' or Spanish ' a '
                 if " to " in date_range:
                     start_str, end_str = date_range.split(" to ")
                     start_date = datetime.strptime(start_str, "%Y-%m-%d")
-                    # Set end date to end of day (23:59:59)
+                    end_date = datetime.strptime(end_str, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
+                elif " a " in date_range:
+                    start_str, end_str = date_range.split(" a ")
+                    start_date = datetime.strptime(start_str, "%Y-%m-%d")
                     end_date = datetime.strptime(end_str, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
                 else:
                     # Single date selected
                     start_date = datetime.strptime(date_range, "%Y-%m-%d")
                     end_date = start_date + timedelta(days=1) - timedelta(seconds=1)
-
+                
+                # Make timezone aware to fix filtering issues with Django DateTimeField
+                if timezone.is_naive(start_date):
+                    start_date = timezone.make_aware(start_date)
+                if timezone.is_naive(end_date):
+                    end_date = timezone.make_aware(end_date)
+                
                 orders = orders.filter(fecha__range=(start_date, end_date))
             except ValueError:
                 pass # Ignore invalid date formats
@@ -225,12 +236,16 @@ def historial_view(request):
             orders = orders.filter(proveedor__icontains=provider)
             
         results = orders
+    
+    # Calculate Total Sum (Net Price)
+    total_sum = sum(order.precio for order in results) if results else 0
 
     ordenes = Compra.objects.select_related('usuario__profile').all().order_by('-fecha')
   
     context = {
         'ordenes': ordenes,
         'results': results,
+        'total_sum': total_sum,
         'query': query,
         'provider': provider,
         'date_range': date_range

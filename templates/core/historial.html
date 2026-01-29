@@ -5,7 +5,8 @@
 <!-- FLATPICKR CSS (Date Picker) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <!-- Custom Theme for Flatpickr (Optional, darker) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<!-- Custom Theme for Flatpickr -->
+<link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
 
 <div class="content-container">
     <div class="head-title">
@@ -65,20 +66,21 @@
         <div class="order">
             <div class="head">
                 <h3>Resultados ({{ results|length }})</h3>
+                <h3 style="color: var(--blue); font-size: 1.2rem;">TOTAL: $ {{ total_sum|floatformat:2 }}</h3>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Fecha</th>
                         <th>Usuario</th>
-                        <th>Producto / Insumo</th>
+                        <th>Papel / Insumo</th>
                         <th>Proveedor</th>
-                        <th>Detalles</th> <!-- Gramaje/Formato for Paper -->
-                        <th>Acción</th>
+                        <th>Detalles</th>
+                        <th>Precio</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for orden in ordenes %}
+                    {% for orden in results %}
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -93,10 +95,10 @@
                             </div>
                         </td>
                         <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                        <td><span class="status completed">Completado</span></td>
-                        <td>{{ orden.proveedor }}</td>
                         <td>{{ orden.insumo }}</td>
-                        <td>$ {{ orden.total|floatformat:2 }}</td>
+                        <td>{{ orden.proveedor }}</td>
+                        <td>{{ orden.observaciones|default:"-" }}</td>
+                        <td style="font-weight: bold; color: var(--dark);">$ {{ orden.precio|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr>

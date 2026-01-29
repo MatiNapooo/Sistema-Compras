@@ -236,7 +236,9 @@
             <tr>
                 <th style="width: 8%;">Cant.</th>
                 <th style="width: 10%;">Unidad</th>
-                <th style="width: {% if parsed.is_paper %}20%{% else %}38%{% endif %};">Insumo</th>
+                <th style="width: {% if parsed.is_paper %}20%{% else %}38%{% endif %};">
+                    {% if parsed.is_paper %}Papel{% else %}Insumo{% endif %}
+                </th>
                 <th style="width: 25%;">Observaciones</th>
                 {% if parsed.is_paper %}
                 <th style="width: 10%;">Formato</th>

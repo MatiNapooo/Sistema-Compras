@@ -39,8 +39,8 @@
 
 <div class="orders-container" style="margin-top: 20px;">
 
-    <!-- Table 1: Insumos (Default Visible) -->
-    <div class="orders-table-wrapper active" id="insumosTable">
+    <!-- Table 1: Insumos (Default Hidden) -->
+    <div class="orders-table-wrapper" id="insumosTable">
         <div class="table-data">
             <div class="order">
                 <div class="head">
@@ -145,8 +145,8 @@
         </div>
     </div>
 
-    <!-- Table 2: Papel (Default Hidden) -->
-    <div class="orders-table-wrapper" id="papelesTable">
+    <!-- Table 2: Papel (Default Visible) -->
+    <div class="orders-table-wrapper active" id="papelesTable">
         <div class="table-data" style="background: rgba(60, 145, 230, 0.05);"> <!-- Slight tint for paper -->
             <div class="order">
                 <div class="head">
@@ -208,31 +208,24 @@
     const container = document.querySelector('.orders-container');
 
     function updateContainerHeight() {
-        const activeTable = toggle.checked ? papelesTable : insumosTable;
+        const activeTable = insumosTable.classList.contains('active') ? insumosTable : papelesTable;
         // Get the height of the active table's content
-        const height = activeTable.querySelector('.table-data').offsetHeight;
-        // Set the container height
-        container.style.height = height + 'px';
+        if (activeTable.querySelector('.table-data')) {
+            const height = activeTable.querySelector('.table-data').offsetHeight;
+            container.style.height = height + 'px';
+        }
     }
 
-    // Update height on load
-    window.addEventListener('load', updateContainerHeight);
+    // Update height on load with delay to ensure CSS is ready
+    window.addEventListener('load', () => {
+        setTimeout(updateContainerHeight, 300);
+    });
 
     // Update height on resize (responsiveness)
     window.addEventListener('resize', updateContainerHeight);
 
     toggle.addEventListener('change', function () {
         if (this.checked) {
-            // Show Papel, Hide Insumos
-            insumosTable.classList.remove('active');
-            insumosTable.classList.add('inactive');
-
-            setTimeout(() => {
-                papelesTable.classList.remove('inactive');
-                papelesTable.classList.add('active');
-                updateContainerHeight(); // Update height for new table
-            }, 100); // Small delay for effect overlap
-        } else {
             // Show Insumos, Hide Papel
             papelesTable.classList.remove('active');
             papelesTable.classList.add('inactive');
@@ -240,6 +233,16 @@
             setTimeout(() => {
                 insumosTable.classList.remove('inactive');
                 insumosTable.classList.add('active');
+                updateContainerHeight(); // Update height for new table
+            }, 100);
+        } else {
+            // Show Papel, Hide Insumos
+            insumosTable.classList.remove('active');
+            insumosTable.classList.add('inactive');
+
+            setTimeout(() => {
+                papelesTable.classList.remove('inactive');
+                papelesTable.classList.add('active');
                 updateContainerHeight(); // Update height for new table
             }, 100);
         }
