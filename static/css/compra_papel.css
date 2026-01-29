@@ -12,7 +12,7 @@
 table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 15px; /* More spacing for floating effect */
+    border-spacing: 0 10px;
 }
 
 th {
@@ -36,26 +36,26 @@ td {
     padding: 20px;
     vertical-align: middle;
     font-size: 0.95rem;
-    border-top: 1px solid rgba(0,0,0,0.03);
-    border-bottom: 1px solid rgba(0,0,0,0.03);
+    border-top: 1px solid rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 tr td:first-child {
     border-top-left-radius: 16px;
     border-bottom-left-radius: 16px;
-    border-left: 1px solid rgba(0,0,0,0.03);
+    border-left: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 tr td:last-child {
     border-top-right-radius: 16px;
     border-bottom-right-radius: 16px;
-    border-right: 1px solid rgba(0,0,0,0.03);
+    border-right: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 /* Hover Effect for Rows */
 tbody tr:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     z-index: 10;
     position: relative;
 }
@@ -91,11 +91,13 @@ tbody tr:hover .supplier-name i {
 .badge-weight {
     background: rgba(255, 159, 67, 0.15);
     color: var(--orange);
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: 30px;
     font-weight: 700;
     font-size: 0.85rem;
-    letter-spacing: 0.5px;
+    white-space: nowrap;
+    /* Prevent line break */
+    display: inline-block;
 }
 
 /* Inputs Modernos */
@@ -161,6 +163,10 @@ tbody tr:hover .supplier-name i {
     color: #6c757d;
     font-weight: 500;
     font-size: 0.95rem;
+    display: block;
+    text-align: right;
+    /* Ensure alignment */
+    width: 100%;
 }
 
 .row-total-final {
@@ -175,12 +181,15 @@ tbody tr:hover .supplier-name i {
 
 /* Shop Button */
 .btn-shop {
-    background: linear-gradient(135deg, var(--blue), var(--dark-blue));
-    color: white;
+    background-color: var(--blue);
+    /* Fallback */
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    /* Hardcoded blues to ensure visibility */
+    color: white !important;
     border: none;
     width: 45px;
     height: 45px;
-    border-radius: 15px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
@@ -188,6 +197,10 @@ tbody tr:hover .supplier-name i {
     justify-content: center;
     font-size: 1.3rem;
     box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-shop i {
+    color: white !important;
 }
 
 .btn-shop:hover {
@@ -200,28 +213,36 @@ tbody tr:hover .supplier-name i {
 }
 
 /* Helpers */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
 
 /* Grid Container Tweaks for Form */
 .insumo-form .card-input {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    border: 1px solid rgba(0,0,0,0.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.insumo-form .input-box input, .insumo-form .input-box textarea {
-    background: #f8f9fa;
-    border: 2px solid transparent;
+.insumo-form .input-box input,
+.insumo-form .input-box textarea {
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 8px 12px;
     transition: 0.3s;
 }
 
-.insumo-form .input-box input:focus, .insumo-form .input-box textarea:focus {
-    background: white;
+.insumo-form .input-box input:focus,
+.insumo-form .input-box textarea:focus {
     border-color: var(--blue);
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Toggle Centering Helper */
