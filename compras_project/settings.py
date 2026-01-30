@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 # 1. Definición de rutas
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 2. Seguridad
 SECRET_KEY = 'django-insecure-NextPrintSecreto'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # 3. Apps Instaladas (¡Asegúrate de que 'core' esté aquí!)
 INSTALLED_APPS = [
@@ -23,6 +24,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -59,6 +61,10 @@ DATABASES = {
     }
 }
 
+# Si estamos en Heroku, sobreescribimos la base de datos:
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
 # 6. Validadores de Password e Idioma (puedes dejar los default aquí...)
 LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
@@ -78,3 +84,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 8. Archivos Multimedia (Imágenes de perfil, etc.)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

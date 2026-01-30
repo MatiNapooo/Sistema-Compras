@@ -1,0 +1,1 @@
+web: gunicorn compras_project.wsgi
