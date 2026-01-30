@@ -1,51 +1,58 @@
 import os
 import django
+from django.core.files import File
 
-# 1. Configurar el entorno de Django
+# Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'compras_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from django.core.files import File
+from core.models import Profile  # <--- IMPORTANTE: Traemos el modelo Profile
 
 def subir_imagenes():
-    # --- CONFIGURACIÓN: ASOCIA USUARIO CON SU FOTO ---
-    # Formato: 'nombre_de_usuario_django': 'nombre_archivo.jpg'
+    # --- DICCIONARIO: USUARIO vs ARCHIVO ---
+    # Asegúrate que los nombres de archivo sean EXACTOS a los de la carpeta media/profile_pics
     USUARIOS_FOTOS = {
-        'Marcelo': 'marcelo_profile.jpg',       # Ejemplo: Al usuario 'admin' le ponemos anorak.jpg
-        'Ariadna': 'ariadna_profile.jpg',        # Cambia 'juan' por el usuario real
+        'Marcelo': 'marcelo_profile.jpg',
+        'Ariadna': 'ariadna_profile.png',
         'Lonapoli': 'lonapoli.jpg',
         'Nicolas': 'nnapoli.jpg',
         'Federico': 'farias.jpg',
+        # Agrega el resto si faltan
     }
 
     base_dir = 'media/profile_pics'
 
-    print("--- INICIANDO CARGA A CLOUDINARY ---")
+    print("--- INICIANDO REPARACIÓN Y CARGA ---")
 
     for username, filename in USUARIOS_FOTOS.items():
         try:
-            # Buscamos al usuario
-            user = User.objects.get(username=username)
+            # 1. Buscar usuario (sin importar mayúsculas/minúsculas en la búsqueda)
+            user = User.objects.filter(username__iexact=username).first()
+            
+            if not user:
+                print(f"❌ El usuario '{username}' no existe en la base de datos.")
+                continue
+
+            # 2. Obtener o CREAR el perfil (Aquí solucionamos el error)
+            profile, created = Profile.objects.get_or_create(user=user)
+            if created:
+                print(f"   🔧 Perfil de {username} creado automáticamente.")
+
+            # 3. Verificar archivo
             file_path = os.path.join(base_dir, filename)
-
-            # Verificamos si el archivo existe en el proyecto
+            
             if os.path.exists(file_path):
-                print(f"Subiendo foto para {username} ({filename})...")
-                
-                # Abrimos el archivo y lo guardamos en el perfil
+                print(f"   Subiendo foto ({filename})...")
                 with open(file_path, 'rb') as f:
-                    # Al hacer .save(), Cloudinary intercepta y sube la foto a la nube
-                    user.profile.image.save(filename, File(f))
-                
-                print(f"✅ Listo: {username}")
+                    profile.image.save(filename, File(f))
+                print(f"✅ {username}: Foto actualizada.")
             else:
-                print(f"⚠️  No encontré el archivo: {file_path}")
+                print(f"⚠️  ARCHIVO FALTANTE: No encuentro '{file_path}' en el servidor.")
+                print(f"    ¿Hiciste 'git add' de esa imagen?")
 
-        except User.DoesNotExist:
-            print(f"❌ El usuario '{username}' no existe en la base de datos.")
         except Exception as e:
-            print(f"❌ Error con {username}: {str(e)}")
+            print(f"❌ Error crítico con {username}: {str(e)}")
 
     print("--- FIN ---")
 
