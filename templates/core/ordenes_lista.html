@@ -111,6 +111,7 @@
                             <th>Proveedor</th>
                             <th>Fecha</th>
                             <th>Acciones</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,7 +124,7 @@
                             <td class="search-target">{{ orden.insumo }}</td>
                             <td>{{ orden.proveedor|default:"-" }}</td>
                             <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                            <td style="display: flex; gap: 10px;">
+                            <td style="display: flex; gap: 10px; align-items: center;">
                                 <a href="{% url 'orden_compra' orden.id %}" class="status completed"
                                     style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                                     <i class='bx bxs-file-find'></i> Ver
@@ -132,11 +133,24 @@
                                     style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
                                     <i class='bx bxs-trash'></i>
                                 </button>
+
+                            </td>
+                            <td>
+                                <!-- Payment Button -->
+                                <button onclick="togglePayment(this, {{ orden.id }})" class="status"
+                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 80px; background-color: var(--green); color: white;"
+                                    title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
+                                    {% if orden.pagado %}
+                                    <i class='bx bx-check'></i>
+                                    {% else %}
+                                    Pagado
+                                    {% endif %}
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5">No hay ordenes de insumos registradas.</td>
+                            <td colspan="6">No hay ordenes de insumos registradas.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -165,6 +179,7 @@
                             <th>Proveedor</th>
                             <th>Fecha</th>
                             <th>Acciones</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -177,7 +192,7 @@
                             <td class="search-target">{{ orden.insumo }}</td>
                             <td>{{ orden.proveedor|default:"-" }}</td>
                             <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                            <td style="display: flex; gap: 10px;">
+                            <td style="display: flex; gap: 10px; align-items: center;">
                                 <a href="{% url 'orden_compra' orden.id %}" class="status completed"
                                     style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                                     <i class='bx bxs-file-find'></i> Ver
@@ -186,11 +201,24 @@
                                     style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
                                     <i class='bx bxs-trash'></i>
                                 </button>
+
+                            </td>
+                            <td>
+                                <!-- Payment Button -->
+                                <button onclick="togglePayment(this, {{ orden.id }})" class="status"
+                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 80px; background-color: var(--green); color: white;"
+                                    title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
+                                    {% if orden.pagado %}
+                                    <i class='bx bx-check'></i>
+                                    {% else %}
+                                    Pagado
+                                    {% endif %}
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5">No hay ordenes de papel registradas.</td>
+                            <td colspan="6">No hay ordenes de papel registradas.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -300,6 +328,34 @@
                     }
                 });
         }
+    }
+
+    function togglePayment(button, id) {
+        fetch(`/toggle-payment-status/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.pagado) {
+                        // Changed to Paid -> Show Check
+                        button.innerHTML = "<i class='bx bx-check'></i>";
+                        button.title = "Pagado";
+                    } else {
+                        // Changed to Unpaid -> Show Text
+                        button.innerHTML = "Pagado";
+                        button.title = "Marcar como pagado";
+                    }
+                    // Always green as requested
+                    button.style.backgroundColor = 'var(--green)';
+                    button.style.color = '#fff';
+                } else {
+                    alert('Error al actualizar estado');
+                }
+            });
     }
 </script>
 

@@ -1,28 +1,36 @@
 import os
 import django
+import sys
+
+# Add project root to path
+sys.path.append(os.getcwd())
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'compras_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from core.models import Profile
+# Profile is automatically created via signals usually, but we are updating existing ones
 
-# Map usernames to filenames
-images = {
-    'nnapoli': 'profile_pics/nnapoli.jpg',
-    'lonapoli': 'profile_pics/lonapoli.jpg',
-}
-
-for username, image_path in images.items():
+def update_profile(username_part, image_path):
     try:
-        user = User.objects.get(username=username)
-        profile, created = Profile.objects.get_or_create(user=user)
-        profile.image = image_path
-        profile.save()
-        print(f"Imagen actualizada para {username}")
-    except User.DoesNotExist:
-        print(f"Usuario {username} no encontrado")
+        user = User.objects.filter(username__icontains=username_part).first()
+        if user:
+            print(f"Found user: {user.username}")
+            # Ensure profile exists
+            if not hasattr(user, 'profile'):
+                from core.models import Profile
+                Profile.objects.create(user=user)
+            
+            user.profile.image = image_path
+            user.profile.save()
+            print(f"Updated profile image for {user.username} to {image_path}")
+        else:
+            print(f"User with username containing '{username_part}' not found.")
+            # Check all users
+            print("Available users:", [u.username for u in User.objects.all()])
     except Exception as e:
-        print(f"Error actualizando {username}: {e}")
+        print(f"Error updating {username_part}: {e}")
 
-print("Proceso de imagenes finalizado.")
+if __name__ == '__main__':
+    update_profile('marcelo', 'profile_pics/marcelo_profile.jpg')
+    update_profile('aridna', 'profile_pics/ariadna_profile.png')

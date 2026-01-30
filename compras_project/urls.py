@@ -20,6 +20,7 @@ urlpatterns = [
     path('eliminar-orden/<int:compra_id>/', views.delete_compra, name='delete_compra'),
     path('ordenes/', views.ordenes_list_view, name='ordenes_lista'),
     path('historial/', views.historial_view, name='historial'),
+    path('toggle-payment-status/<int:compra_id>/', views.toggle_payment_status, name='toggle_payment_status'),
 ]
 
 if settings.DEBUG:

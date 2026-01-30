@@ -251,3 +251,16 @@ def historial_view(request):
         'date_range': date_range
     }
     return render(request, 'core/historial.html', context)
+
+def toggle_payment_status(request, compra_id):
+    if request.method == 'POST':
+        compra = get_object_or_404(Compra, id=compra_id)
+        # Toggle status (Reversible)
+        compra.pagado = not compra.pagado
+        compra.save()
+        return JsonResponse({'status': 'success', 'pagado': compra.pagado})
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=400)
+
+
+
+
