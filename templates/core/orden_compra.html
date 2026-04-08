@@ -236,6 +236,12 @@
             <tr>
                 <th style="width: 8%;">Cant.</th>
                 <th style="width: 10%;">Unidad</th>
+                {% if has_items %}
+                <th style="width: 38%;">Insumo</th>
+                <th style="width: 14%;">Marca</th>
+                <th style="width: 15%; text-align: right;">P. Unitario</th>
+                <th style="width: 15%; text-align: right;">Subtotal</th>
+                {% else %}
                 <th style="width: {% if parsed.is_paper %}20%{% else %}38%{% endif %};">
                     {% if parsed.is_paper %}Papel{% else %}Insumo{% endif %}
                 </th>
@@ -246,36 +252,60 @@
                 {% endif %}
                 <th style="width: 10%; text-align: right;">P. Unitario</th>
                 <th style="width: 10%; text-align: right;">P. Total</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td style="text-align: center;">{{ parsed.qty }}</td>
-                <td style="text-align: center;">{% if parsed.is_paper %}Resmas{% else %}Unidad{% endif %}</td>
-                <td>
-                    {{ parsed.tipo }}
-                    {% if not parsed.is_paper and compra.marca and compra.marca != '-' %}
-                    <br><small style="color: #666;">Marca: {{ compra.marca }}</small>
+            {% if has_items %}
+                {% for item in items %}
+                <tr>
+                    <td style="text-align: center;">{{ item.cantidad }}</td>
+                    <td style="text-align: center;">Unidad</td>
+                    <td>{{ item.insumo }}</td>
+                    <td>{{ item.marca|default:"-" }}</td>
+                    <td style="text-align: right;">$ {{ item.precio_unitario|floatformat:2|intcomma }}</td>
+                    <td style="text-align: right;">$ {{ item.subtotal|floatformat:2|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td style="text-align: center;">{{ parsed.qty }}</td>
+                    <td style="text-align: center;">{% if parsed.is_paper %}Resmas{% else %}Unidad{% endif %}</td>
+                    <td>
+                        {{ parsed.tipo }}
+                        {% if not parsed.is_paper and compra.marca and compra.marca != '-' %}
+                        <br><small style="color: #666;">Marca: {{ compra.marca }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ compra.observaciones|default:"-" }}</td>
+                    {% if parsed.is_paper %}
+                    <td style="text-align: center;">{{ parsed.ancho }} x {{ parsed.alto }}</td>
+                    <td style="text-align: center;">{{ parsed.gramaje }}</td>
                     {% endif %}
-                </td>
-                <td>{{ compra.observaciones|default:"-" }}</td>
-                {% if parsed.is_paper %}
-                <td style="text-align: center;">{{ parsed.ancho }} x {{ parsed.alto }}</td>
-                <td style="text-align: center;">{{ parsed.gramaje }}</td>
-                {% endif %}
-                <td style="text-align: right;">$ {{ parsed.unit_price|floatformat:2|intcomma }}</td>
-                <td style="text-align: right;">$ {{ compra.precio|floatformat:2|intcomma }}</td>
-            </tr>
-            <!-- Fill empty rows to look like the example? Optional, skipping for now to keep it clean -->
+                    <td style="text-align: right;">$ {{ parsed.unit_price|floatformat:2|intcomma }}</td>
+                    <td style="text-align: right;">$ {{ compra.precio|floatformat:2|intcomma }}</td>
+                </tr>
+            {% endif %}
         </tbody>
     </table>
+
+    <!-- Observaciones generales (solo en compras multi-item) -->
+    {% if has_items and compra.observaciones %}
+    <div style="margin-bottom: 20px; padding: 12px 16px; background: #f9f9f9; border-radius: 6px; font-size: 13px; color: #555;">
+        <strong>Observaciones:</strong> {{ compra.observaciones }}
+    </div>
+    {% endif %}
 
     <!-- Totals -->
     <div class="totals-section">
         <table class="totals-table">
             <tr>
                 <td>SUBTOTAL</td>
+                {% if has_items %}
+                <td>$ {{ subtotal|floatformat:2|intcomma }}</td>
+                {% else %}
                 <td>$ {{ compra.precio|floatformat:2|intcomma }}</td>
+                {% endif %}
             </tr>
             <tr>
                 <td>IVA (21%)</td>

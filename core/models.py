@@ -10,16 +10,44 @@ class Compra(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     pedido_por = models.CharField(max_length=100)
-    insumo = models.CharField(max_length=200) # Nombre del item
+    # Legacy fields — kept for backward compatibility with old single-item orders
+    insumo = models.CharField(max_length=200, blank=True, default='')
     proveedor = models.CharField(max_length=200)
-    marca = models.CharField(max_length=100)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    marca = models.CharField(max_length=100, blank=True, default='')
+    precio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     observaciones = models.TextField(blank=True, null=True)
     pagado = models.BooleanField(default=False)
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.tipo} - {self.insumo} ({self.fecha})"
+        if self.insumo:
+            return f"{self.tipo} - {self.insumo} ({self.fecha})"
+        return f"{self.tipo} - {self.proveedor} ({self.fecha})"
+
+    @property
+    def precio_total(self):
+        """Devuelve el precio total: suma de ítems si los hay, o precio legacy."""
+        items = self.items.all()
+        if items.exists():
+            return sum(item.subtotal for item in items)
+        return self.precio or 0
+
+
+class ItemCompra(models.Model):
+    """Línea de detalle de una compra multi-insumo."""
+    compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name='items')
+    insumo = models.CharField(max_length=200)
+    marca = models.CharField(max_length=100, blank=True, default='')
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+
+    @property
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+    def __str__(self):
+        return f"{self.insumo} x{self.cantidad} — {self.compra}"
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -5,7 +5,7 @@ from django.contrib.auth import logout
 import json
 import urllib.request
 import re
-from .models import Compra
+from .models import Compra, ItemCompra
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -57,22 +57,41 @@ def dashboard_view(request):
     })
 
 @login_required(login_url='/')
-@login_required(login_url='/')
 def registrar_compra(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # Create new purchase
-            created_compra = Compra.objects.create(
-                usuario=request.user,
-                tipo=data.get('tipo', 'INSUMO'), # Use provided type or default
-                pedido_por=request.user.first_name if request.user.first_name else request.user.username,
-                insumo=data.get('insumo'),
-                proveedor=data.get('proveedor'),
-                marca=data.get('marca'),
-                precio=data.get('precio'),
-                observaciones=data.get('observaciones')
-            )
+            tipo = data.get('tipo', 'INSUMO')
+            items_data = data.get('items', None)  # New multi-item format
+
+            if items_data:  # ── New multi-item order ──
+                created_compra = Compra.objects.create(
+                    usuario=request.user,
+                    tipo=tipo,
+                    pedido_por=request.user.first_name if request.user.first_name else request.user.username,
+                    proveedor=data.get('proveedor', ''),
+                    observaciones=data.get('observaciones', '')
+                )
+                for item in items_data:
+                    ItemCompra.objects.create(
+                        compra=created_compra,
+                        insumo=item.get('insumo', ''),
+                        marca=item.get('marca', ''),
+                        cantidad=int(item.get('cantidad', 1)),
+                        precio_unitario=float(item.get('precio_unitario', 0))
+                    )
+            else:  # ── Legacy single-item order (papel, etc.) ──
+                created_compra = Compra.objects.create(
+                    usuario=request.user,
+                    tipo=tipo,
+                    pedido_por=request.user.first_name if request.user.first_name else request.user.username,
+                    insumo=data.get('insumo', ''),
+                    proveedor=data.get('proveedor', ''),
+                    marca=data.get('marca', ''),
+                    precio=data.get('precio'),
+                    observaciones=data.get('observaciones', '')
+                )
+
             return JsonResponse({'status': 'success', 'id': created_compra.id})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
@@ -110,58 +129,79 @@ def compra_papel_view(request):
 @login_required(login_url='/')
 def orden_compra_view(request, compra_id):
     compra = get_object_or_404(Compra, id=compra_id)
-    
-    # Defaults
-    parsed_data = {
-        'tipo': compra.insumo,
-        'ancho': '-',
-        'alto': '-',
-        'gramaje': '-',
-        'qty': 1,
-        'unit_price': compra.precio,
-        'is_paper': False
-    }
+    compra_items = compra.items.all()  # ItemCompra lines
+    has_items = compra_items.exists()
 
-    # Regex Parsing for Paper: "Papel [Type] [W]x[H] [G]gr (x[Qty])"
-    # Example: Papel Ilustracion 72x102 275gr (x12)
-    match = re.search(r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)", compra.insumo)
-    
-    # Determine if it is paper based on Type OR Regex match (for backward compatibility)
-    if compra.tipo == 'PAPEL' or match:
-        parsed_data['is_paper'] = True
-        
-    if match:
-        parsed_data['tipo'] = match.group(1)
-        parsed_data['ancho'] = match.group(2)
-        parsed_data['alto'] = match.group(3)
-        parsed_data['gramaje'] = match.group(4)
-        parsed_data['qty'] = int(match.group(5))
-        if parsed_data['qty'] > 0:
-            parsed_data['unit_price'] = compra.precio / parsed_data['qty']
-            
-    # Generic Insumo Parsing: "Item Name (xQty)"
-    # Fallback if not Paper but has quantity suffix
-    elif not parsed_data['is_paper']:
-        match_generic = re.search(r"(.+) \(x(\d+)\)$", compra.insumo)
-        if match_generic:
-            parsed_data['tipo'] = match_generic.group(1)
-            parsed_data['qty'] = int(match_generic.group(2))
+    if has_items:
+        # ── New multi-item order ──
+        items_parsed = []
+        for item in compra_items:
+            items_parsed.append({
+                'insumo': item.insumo,
+                'marca': item.marca,
+                'cantidad': item.cantidad,
+                'precio_unitario': float(item.precio_unitario),
+                'subtotal': float(item.subtotal),
+            })
+        subtotal = sum(i['subtotal'] for i in items_parsed)
+        iva = subtotal * 0.21
+        total_final = subtotal + iva
+
+        context = {
+            'compra': compra,
+            'has_items': True,
+            'items': items_parsed,
+            'subtotal': subtotal,
+            'iva': iva,
+            'total_final': total_final,
+            'fecha_hoy': datetime.now()
+        }
+    else:
+        # ── Legacy single-item order (backward compatible) ──
+        parsed_data = {
+            'tipo': compra.insumo,
+            'ancho': '-',
+            'alto': '-',
+            'gramaje': '-',
+            'qty': 1,
+            'unit_price': compra.precio,
+            'is_paper': False
+        }
+
+        match = re.search(r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)", compra.insumo or '')
+
+        if compra.tipo == 'PAPEL' or match:
+            parsed_data['is_paper'] = True
+
+        if match:
+            parsed_data['tipo'] = match.group(1)
+            parsed_data['ancho'] = match.group(2)
+            parsed_data['alto'] = match.group(3)
+            parsed_data['gramaje'] = match.group(4)
+            parsed_data['qty'] = int(match.group(5))
             if parsed_data['qty'] > 0:
                 parsed_data['unit_price'] = compra.precio / parsed_data['qty']
+        elif not parsed_data['is_paper']:
+            match_generic = re.search(r"(.+) \(x(\d+)\)$", compra.insumo or '')
+            if match_generic:
+                parsed_data['tipo'] = match_generic.group(1)
+                parsed_data['qty'] = int(match_generic.group(2))
+                if parsed_data['qty'] > 0:
+                    parsed_data['unit_price'] = compra.precio / parsed_data['qty']
 
-    # Calculations
-    # Ensure precio is treated as a number (it might come as a string/decimal from DB)
-    subtotal = float(compra.precio)
-    iva = subtotal * 0.21
-    total_final = subtotal + iva
+        subtotal = float(compra.precio or 0)
+        iva = subtotal * 0.21
+        total_final = subtotal + iva
 
-    context = {
-        'compra': compra,
-        'parsed': parsed_data,
-        'iva': iva,
-        'total_final': total_final,
-        'fecha_hoy': datetime.now()
-    }
+        context = {
+            'compra': compra,
+            'has_items': False,
+            'parsed': parsed_data,
+            'iva': iva,
+            'total_final': total_final,
+            'fecha_hoy': datetime.now()
+        }
+
     return render(request, 'core/orden_compra.html', context)
 
 @login_required(login_url='/')
@@ -237,8 +277,8 @@ def historial_view(request):
             
         results = orders
     
-    # Calculate Total Sum (Net Price)
-    total_sum = sum(order.precio for order in results) if results else 0
+    # Calculate Total Sum (Net Price) — use precio_total property which handles multi-item orders
+    total_sum = sum(order.precio_total for order in results) if results else 0
 
     ordenes = Compra.objects.select_related('usuario__profile').all().order_by('-fecha')
   

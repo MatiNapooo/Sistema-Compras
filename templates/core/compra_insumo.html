@@ -2,6 +2,165 @@
 {% load static %}
 
 {% block content %}
+<style>
+    .compra-wrapper {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    /* ── Header cabecera ── */
+    .section-card {
+        background: var(--light);
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--blue);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .header-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    /* ── Ítems ── */
+    .items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .item-row {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr 100px 140px 36px;
+        gap: 10px;
+        align-items: center;
+        background: var(--light);
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .item-row .input-box {
+        margin: 0;
+    }
+
+    .item-row label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .btn-remove-item {
+        background: transparent;
+        border: 1.5px solid #e0e0e0;
+        color: #bbb;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        align-self: flex-end;
+    }
+    .btn-remove-item:hover {
+        border-color: #e53935;
+        color: #e53935;
+        background: #fff5f5;
+    }
+
+    /* ── Botón agregar ítem ── */
+    .btn-add-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: transparent;
+        border: 2px dashed var(--blue);
+        color: var(--blue);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        width: 100%;
+        justify-content: center;
+        transition: all 0.2s;
+        margin-top: 4px;
+    }
+    .btn-add-item:hover {
+        background: rgba(59, 130, 246, 0.06);
+    }
+
+    /* ── Total en tiempo real ── */
+    .total-bar {
+        background: var(--blue);
+        color: white;
+        border-radius: 10px;
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .total-bar .label {
+        font-size: 14px;
+        opacity: 0.85;
+    }
+    .total-bar .amount {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Reutiliza estilos existentes ── */
+    .card-input {
+        display: flex;
+        flex-direction: column;
+    }
+    .card-input label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    @media (max-width: 700px) {
+        .item-row {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto auto;
+        }
+        .btn-remove-item { grid-column: 2; justify-self: end; align-self: center; }
+        .header-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
 <div class="content-container">
     <div class="head-title">
         <div class="left">
@@ -9,71 +168,60 @@
         </div>
     </div>
 
-    <form class="insumo-form">
-        <div class="grid-container">
-            <!-- 1. Insumo (Moved to start) -->
-            <div class="card-input">
-                <label>Insumo</label>
-                <div class="input-box">
-                    <i class='bx bxs-box'></i>
-                    <input type="text" placeholder="Ej: Toner Negro" required>
-                </div>
-            </div>
+    <div class="compra-wrapper">
 
-            <!-- 2. Cantidad (New) -->
-            <div class="card-input">
-                <label>Cantidad</label>
-                <div class="input-box">
-                    <i class='bx bxs-calculator'></i>
-                    <input type="number" id="qty-input" placeholder="1" value="1" min="1" required>
-                </div>
+        <!-- ── Cabecera: Proveedor + Observaciones ── -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class='bx bxs-store'></i> Datos de la Compra
             </div>
-
-            <!-- 3. Proveedor -->
-            <div class="card-input">
-                <label>Proveedor</label>
-                <div class="input-box">
-                    <i class='bx bxs-store'></i>
-                    <input type="text" placeholder="Empresa proveedora" required>
+            <div class="header-grid">
+                <div class="card-input">
+                    <label>Proveedor</label>
+                    <div class="input-box">
+                        <i class='bx bxs-store'></i>
+                        <input id="input-proveedor" type="text" placeholder="Empresa proveedora" required>
+                    </div>
                 </div>
-            </div>
-
-            <!-- 4. Marca -->
-            <div class="card-input">
-                <label>Marca</label>
-                <div class="input-box">
-                    <i class='bx bxs-tag'></i>
-                    <input type="text" placeholder="Ej: HP, Epson" required>
-                </div>
-            </div>
-
-            <!-- 5. Precio -->
-            <div class="card-input">
-                <label>Precio Final</label>
-                <div class="input-box">
-                    <i class='bx bxs-dollar-circle'></i>
-                    <input type="number" placeholder="0.00" required>
-                </div>
-            </div>
-
-            <!-- 6. Observaciones -->
-            <div class="card-input full-width">
-                <label>Observaciones</label>
-                <div class="input-box">
-                    <i class='bx bxs-notepad'></i>
-                    <textarea placeholder="Detalles adicionales..."></textarea>
+                <div class="card-input">
+                    <label>Observaciones</label>
+                    <div class="input-box">
+                        <i class='bx bxs-notepad'></i>
+                        <input id="input-observaciones" type="text" placeholder="Detalles adicionales (opcional)">
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- ── Lista de ítems ── -->
+        <div class="section-card">
+            <div class="section-title">
+                <i class='bx bxs-package'></i> Insumos a Comprar
+            </div>
+
+            <div class="items-list" id="items-list">
+                <!-- Las filas se insertan aquí por JS -->
+            </div>
+
+            <button type="button" class="btn-add-item" onclick="addItem()">
+                <i class='bx bx-plus-circle'></i> Agregar insumo
+            </button>
+        </div>
+
+        <!-- ── Total en tiempo real ── -->
+        <div class="total-bar">
+            <span class="label">Total estimado (sin IVA)</span>
+            <span class="amount" id="total-display">$ 0,00</span>
+        </div>
+
         <button type="button" class="btn-confirm" onclick="showPopup()">
-            Confirmar
+            Confirmar Compra
             <i class='bx bx-check'></i>
         </button>
-    </form>
+    </div>
 </div>
 
-<!-- POPUP -->
+<!-- ── POPUP ── -->
 <div id="success-popup" class="popup-overlay">
     <div class="popup-content">
         <div class="icon-checkmark">
@@ -93,40 +241,143 @@
 </div>
 
 <script>
-    function showPopup() {
-        // Validation
-        const inputs = document.querySelectorAll('.insumo-form input[required]');
-        let isValid = true;
+    let itemCount = 0;
 
-        inputs.forEach(input => {
-            if (!input.value.trim()) {
-                isValid = false;
-                input.parentElement.style.boxShadow = "0 0 0 2px var(--red)";
-                setTimeout(() => {
-                    input.parentElement.style.boxShadow = "none";
-                }, 3000);
-            }
+    function formatMoney(n) {
+        return '$ ' + Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function addItem(defaults = {}) {
+        itemCount++;
+        const idx = itemCount;
+        const list = document.getElementById('items-list');
+
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.id = `item-row-${idx}`;
+        row.innerHTML = `
+            <div class="card-input">
+                <label>Insumo</label>
+                <div class="input-box">
+                    <i class='bx bxs-box'></i>
+                    <input type="text" placeholder="Ej: Toner Negro" class="item-insumo" value="${defaults.insumo || ''}" required>
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Marca</label>
+                <div class="input-box">
+                    <i class='bx bxs-tag'></i>
+                    <input type="text" placeholder="Ej: HP, Epson" class="item-marca" value="${defaults.marca || ''}">
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Cant.</label>
+                <div class="input-box" style="padding-left: 12px;">
+                    <input type="number" placeholder="1" value="${defaults.cantidad || 1}" min="1" class="item-cantidad" oninput="recalcTotal()" style="padding-left: 4px;">
+                </div>
+            </div>
+            <div class="card-input">
+                <label>Precio Unit.</label>
+                <div class="input-box">
+                    <i class='bx bxs-dollar-circle'></i>
+                    <input type="number" placeholder="0.00" step="0.01" min="0" class="item-precio" value="${defaults.precio || ''}" oninput="recalcTotal()">
+                </div>
+            </div>
+            <button type="button" class="btn-remove-item" onclick="removeItem(${idx})" title="Eliminar ítem">
+                <i class='bx bx-x'></i>
+            </button>
+        `;
+
+        list.appendChild(row);
+        recalcTotal();
+    }
+
+    function removeItem(idx) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length <= 1) {
+            alert('Debe haber al menos un insumo en la compra.');
+            return;
+        }
+        const row = document.getElementById(`item-row-${idx}`);
+        if (row) {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(-6px)';
+            row.style.transition = 'all 0.15s ease';
+            setTimeout(() => { row.remove(); recalcTotal(); }, 150);
+        }
+    }
+
+    function recalcTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const cant = parseFloat(row.querySelector('.item-cantidad').value) || 0;
+            const precio = parseFloat(row.querySelector('.item-precio').value) || 0;
+            total += cant * precio;
         });
+        document.getElementById('total-display').textContent = formatMoney(total);
+    }
 
-        if (!isValid) {
-            alert("Por favor, completa todos los campos obligatorios.");
+    function getItems() {
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            items.push({
+                insumo: row.querySelector('.item-insumo').value.trim(),
+                marca: row.querySelector('.item-marca').value.trim(),
+                cantidad: parseInt(row.querySelector('.item-cantidad').value) || 1,
+                precio_unitario: parseFloat(row.querySelector('.item-precio').value) || 0
+            });
+        });
+        return items;
+    }
+
+    function showPopup() {
+        // ── Validar proveedor ──
+        const proveedor = document.getElementById('input-proveedor').value.trim();
+        if (!proveedor) {
+            const box = document.getElementById('input-proveedor').parentElement;
+            box.style.boxShadow = '0 0 0 2px var(--red)';
+            setTimeout(() => { box.style.boxShadow = 'none'; }, 3000);
+            alert('Por favor ingresá el proveedor.');
             return;
         }
 
-        // Collect Data
-        const itemInput = document.querySelector('input[placeholder="Ej: Toner Negro"]').value;
-        const qtyInput = document.getElementById('qty-input').value || "1";
+        // ── Validar ítems ──
+        const items = getItems();
+        if (items.length === 0) {
+            alert('Agregá al menos un insumo.');
+            return;
+        }
 
+        let hasError = false;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const insumoInput = row.querySelector('.item-insumo');
+            const precioInput = row.querySelector('.item-precio');
+
+            if (!insumoInput.value.trim()) {
+                insumoInput.parentElement.style.boxShadow = '0 0 0 2px var(--red)';
+                setTimeout(() => { insumoInput.parentElement.style.boxShadow = 'none'; }, 3000);
+                hasError = true;
+            }
+            if (!precioInput.value || parseFloat(precioInput.value) <= 0) {
+                precioInput.parentElement.style.boxShadow = '0 0 0 2px var(--red)';
+                setTimeout(() => { precioInput.parentElement.style.boxShadow = 'none'; }, 3000);
+                hasError = true;
+            }
+        });
+
+        if (hasError) {
+            alert('Por favor completá todos los campos requeridos de los insumos.');
+            return;
+        }
+
+        // ── Enviar ──
         const data = {
-            insumo: `${itemInput} (x${qtyInput})`,
-            proveedor: document.querySelector('input[placeholder="Empresa proveedora"]').value,
-            marca: document.querySelector('input[placeholder="Ej: HP, Epson"]').value,
-            precio: document.querySelector('input[placeholder="0.00"]').value,
-            observaciones: document.querySelector('textarea').value,
-            tipo: 'INSUMO'
+            tipo: 'INSUMO',
+            proveedor: proveedor,
+            observaciones: document.getElementById('input-observaciones').value.trim(),
+            items: items
         };
 
-        // Send Data
         fetch("{% url 'registrar_compra' %}", {
             method: 'POST',
             headers: {
@@ -135,26 +386,27 @@
             },
             body: JSON.stringify(data)
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.id) {
-                    // Update the View Order button link
-                    const btn = document.getElementById('btn-view-insumo-order');
-                    btn.href = `/orden-compra/${data.id}/`;
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.id) {
+                const btn = document.getElementById('btn-view-insumo-order');
+                btn.href = `/orden-compra/${data.id}/`;
 
-                    // Show Popup
-                    document.querySelector('.content-container').classList.add('blur-active');
-                    document.querySelector('#sidebar').classList.add('blur-active');
-                    document.querySelector('nav').classList.add('blur-active');
-                    document.getElementById('success-popup').classList.add('active');
-                } else {
-                    alert('Error al guardar: ' + (data.message || 'Unknown'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al procesar la solicitud.');
-            });
+                document.querySelector('.content-container').classList.add('blur-active');
+                document.querySelector('#sidebar').classList.add('blur-active');
+                document.querySelector('nav').classList.add('blur-active');
+                document.getElementById('success-popup').classList.add('active');
+            } else {
+                alert('Error al guardar: ' + (data.message || 'Unknown'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud.');
+        });
     }
+
+    // Inicializar con un ítem vacío al cargar
+    addItem();
 </script>
 {% endblock %}
