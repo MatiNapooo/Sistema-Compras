@@ -14,12 +14,12 @@ from django.contrib.auth.models import User
 from core.models import Profile
 
 USUARIOS_CLOUDINARY = {
-    'marcelo':  'profile_pics/marcelo',
-    'aridna':   'profile_pics/aridna',
-    'lonapoli': 'profile_pics/lonapoli',
-    'nnapoli':  'profile_pics/nnapoli',
-    'Farias':   'profile_pics/Farias',
-    'anorak':   'profile_pics/anorak',
+    'Marcelo':   'profile_pics/marcelo',
+    'Ariadna':   'profile_pics/aridna',
+    'Lonapoli':  'profile_pics/lonapoli',
+    'Nicolas':   'profile_pics/nnapoli',
+    'Federico':  'profile_pics/Farias',
+    'anorak':    'profile_pics/anorak',
 }
 
 print("--- ACTUALIZANDO DB CON CLOUDINARY PATHS ---")
