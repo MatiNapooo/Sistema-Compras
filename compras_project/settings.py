@@ -89,4 +89,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
+# 9. Cloudinary (almacenamiento de imágenes en la nube)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dvinasjl9'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '331969733158713'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', '4-ACWlJhFEq351-TYPbi9IRYoeM'),
+}
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
