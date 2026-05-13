@@ -118,10 +118,18 @@
                         {% for orden in insumos %}
                         <tr>
                             <td>
-                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
+                                <img src="{{ orden.usuario.profile.photo_url }}" alt="User">
                                 <p>{{ orden.pedido_por }}</p>
                             </td>
-                            <td class="search-target">{{ orden.insumo }}</td>
+                            <td class="search-target">
+                                {% if orden.items.exists %}
+                                    {% for item in orden.items.all %}
+                                        <span style="display:block; font-size:12px; line-height:1.5;">• {{ item.insumo }}{% if item.marca %} <span style="color:#999;">({{ item.marca }})</span>{% endif %} x{{ item.cantidad }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    {{ orden.insumo|default:"-" }}
+                                {% endif %}
+                            </td>
                             <td>{{ orden.proveedor|default:"-" }}</td>
                             <td>{{ orden.fecha|date:"d/m/Y" }}</td>
                             <td style="display: flex; gap: 10px; align-items: center;">
@@ -186,10 +194,10 @@
                         {% for orden in papeles %}
                         <tr>
                             <td>
-                                <img src="{{ orden.usuario.profile.image.url }}" alt="User">
+                                <img src="{{ orden.usuario.profile.photo_url }}" alt="User">
                                 <p>{{ orden.pedido_por }}</p>
                             </td>
-                            <td class="search-target">{{ orden.insumo }}</td>
+                            <td class="search-target">{{ orden.insumo|default:"-" }}</td>
                             <td>{{ orden.proveedor|default:"-" }}</td>
                             <td>{{ orden.fecha|date:"d/m/Y" }}</td>
                             <td style="display: flex; gap: 10px; align-items: center;">

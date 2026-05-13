@@ -221,13 +221,15 @@ def delete_compra(request, compra_id):
 
 @login_required(login_url='/')
 def ordenes_list_view(request):
-    # Fetch all orders
-    all_orders = Compra.objects.all().order_by('-fecha')
-    
+    # Fetch all orders con items y profile del usuario pre-cargados
+    all_orders = Compra.objects.select_related(
+        'usuario__profile'
+    ).prefetch_related('items').order_by('-fecha')
+
     # Filter by type
     insumos = all_orders.filter(tipo='INSUMO')
     papeles = all_orders.filter(tipo='PAPEL')
-    
+
     context = {
         'insumos': insumos,
         'papeles': papeles
