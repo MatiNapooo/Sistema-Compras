@@ -15,16 +15,23 @@ def login_view(request):
         # 1. Obtener datos del formulario
         usuario_form = request.POST.get('username')
         clave_form = request.POST.get('password')
-        
+        recordarme = request.POST.get('remember_me')  # checkbox
+
         # 2. Verificar credenciales con Django
         user = authenticate(request, username=usuario_form, password=clave_form)
-        
+
         if user is not None:
-            # 3. Si existe, iniciar sesión y redirigir al menú
             login(request, user)
+
+            # 3. "Recordarme": si está marcado, la sesión dura 30 días
+            #    Si no, expira al cerrar el navegador
+            if recordarme:
+                request.session.set_expiry(60 * 60 * 24 * 30)  # 30 días
+            else:
+                request.session.set_expiry(0)  # Expira al cerrar el browser
+
             return redirect('dashboard')
         else:
-            # Si falla, volvemos a mostrar el login con un mensaje de error (opcional)
             return render(request, 'core/login.html', {'error': 'Datos incorrectos'})
 
     # Si es GET (al entrar por primera vez)

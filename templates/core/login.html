@@ -40,6 +40,13 @@
         </div>
 
         <div class="button-wrapper">
+            <div class="remember-wrapper">
+                <label class="remember-label" for="remember_me">
+                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <span class="remember-custom"></span>
+                    Recordar mi cuenta
+                </label>
+            </div>
             <button type="submit">
                 Ingresar
                 <i class="bx bx-right-arrow-alt"></i>
@@ -47,7 +54,7 @@
         </div>
 
         {% if error %}
-        <p style="color: white; background: red; padding: 5px; border-radius: 5px; margin-top: 10px;">
+        <p style="color: white; background: rgba(200,0,0,0.5); padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-size: 14px;">
             {{ error }}
         </p>
         {% endif %}
