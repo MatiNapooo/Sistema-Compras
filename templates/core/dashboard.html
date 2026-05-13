@@ -45,13 +45,21 @@
                     <td>
                         <a href="{% url 'orden_compra' order.id %}"
                             style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-                            <img src="{{ order.usuario.profile.image.url }}" alt="User"
+                            <img src="{{ order.usuario.profile.photo_url }}" alt="User"
                                 onerror="this.src='/static/img/people.png'">
                             <p style="margin-left: 10px;">{{ order.pedido_por }}</p>
                         </a>
                     </td>
                     <td>{{ order.fecha|date:"d-m-Y" }}</td>
-                    <td><span class="status completed">{{ order.insumo }}</span></td>
+                    <td>
+                        {% if order.items.exists %}
+                            {% for item in order.items.all %}
+                                <span class="status completed" style="display:inline-block; margin: 1px 0; font-size:11px;">{{ item.insumo }} x{{ item.cantidad }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="status completed">{{ order.insumo|default:"-" }}</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <!-- Delete Button -->
                         <button onclick="deleteOrder({{ order.id }})"

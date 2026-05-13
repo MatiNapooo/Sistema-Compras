@@ -55,8 +55,10 @@ def dashboard_view(request):
     except Exception as e:
         print(f"Error fetching dolar: {e}")
 
-    # Fetch recent orders (last 3)
-    recent_orders = Compra.objects.all().order_by('-fecha')[:3]
+    # Fetch recent orders (last 3) con profile e items pre-cargados
+    recent_orders = Compra.objects.select_related(
+        'usuario__profile'
+    ).prefetch_related('items').order_by('-fecha')[:3]
 
     return render(request, 'core/dashboard.html', {
         'dolar': dolar_oficial,
