@@ -55,3 +55,18 @@ class Profile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} Profile'
+
+    @property
+    def photo_url(self):
+        """
+        Devuelve la URL de la imagen desde Cloudinary.
+        El campo 'image' guarda el public_id, ej: 'profile_pics/marcelo'
+        """
+        CLOUD_NAME = 'dvinasjl9'
+
+        if self.image and self.image.name and self.image.name != 'default.jpg':
+            public_id = self.image.name
+            return f"https://res.cloudinary.com/{CLOUD_NAME}/image/upload/{public_id}"
+
+        # Imagen por defecto: un avatar genérico de Cloudinary
+        return f"https://res.cloudinary.com/{CLOUD_NAME}/image/upload/profile_pics/default_avatar"
