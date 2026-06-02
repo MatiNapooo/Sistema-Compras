@@ -446,11 +446,11 @@ form {
     .remember-label {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 15px;
         color: var(--color);
-        opacity: 0.85;
+        opacity: 0.9;
         user-select: none;
     }
 
@@ -459,16 +459,17 @@ form {
     }
 
     .remember-custom {
-        width: 18px;
-        height: 18px;
-        min-width: 18px;
-        border-radius: 4px;
-        border: 2px solid rgba(255, 255, 255, 0.4);
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
+        border-radius: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.5);
         background: rgba(0, 0, 0, 0.25);
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 200ms ease;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     .remember-label:hover .remember-custom {
@@ -483,12 +484,12 @@ form {
     .remember-label input[type="checkbox"]:checked ~ .remember-custom::after {
         content: "";
         display: block;
-        width: 5px;
-        height: 9px;
-        border: 2px solid white;
+        width: 7px;
+        height: 13px;
+        border: 2.5px solid white;
         border-top: none;
         border-left: none;
-        transform: rotate(45deg) translateY(-1px);
+        transform: rotate(45deg) translateY(-2px);
     }
 
     button[type="submit"] {

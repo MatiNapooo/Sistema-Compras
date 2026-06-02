@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 from django.contrib.auth.models import User
 
 class Compra(models.Model):
@@ -70,3 +71,15 @@ class Profile(models.Model):
 
         # Imagen por defecto: un avatar genérico de Cloudinary
         return f"https://res.cloudinary.com/{CLOUD_NAME}/image/upload/profile_pics/default_avatar"
+
+
+class TrustedDevice(models.Model):
+    """Token persistente para recordar el dispositivo del usuario."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trusted_devices')
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"TrustedDevice({self.user.username}, expires={self.expires_at})"
+

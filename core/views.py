@@ -3,14 +3,36 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 import json
+import uuid
 import urllib.request
 import re
-from .models import Compra, ItemCompra
+from .models import Compra, ItemCompra, TrustedDevice
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 from django.utils import timezone
 
+REMEMBER_COOKIE = 'trusted_device'
+REMEMBER_DAYS = 30
+
+
 def login_view(request):
+    # ── Auto-login si existe una cookie de dispositivo confiable ──
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    cookie_token = request.COOKIES.get(REMEMBER_COOKIE)
+    if cookie_token:
+        try:
+            device = TrustedDevice.objects.select_related('user').get(
+                token=uuid.UUID(cookie_token),
+                expires_at__gt=timezone.now()
+            )
+            login(request, device.user,
+                  backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('dashboard')
+        except (TrustedDevice.DoesNotExist, ValueError, AttributeError):
+            pass  # Token inválido o expirado → mostrar login normal
+
     if request.method == 'POST':
         # 1. Obtener datos del formulario
         usuario_form = request.POST.get('username')
@@ -23,14 +45,28 @@ def login_view(request):
         if user is not None:
             login(request, user)
 
-            # 3. "Recordarme": si está marcado, la sesión dura 30 días
-            #    Si no, expira al cerrar el navegador
+            response = redirect('dashboard')
+
             if recordarme:
-                request.session.set_expiry(60 * 60 * 24 * 30)  # 30 días
+                # Sesión sin expirar por cierre de browser
+                request.session.set_expiry(60 * 60 * 24 * REMEMBER_DAYS)
+
+                # Crear token persistente en la BD
+                expires = timezone.now() + timedelta(days=REMEMBER_DAYS)
+                device = TrustedDevice.objects.create(user=user, expires_at=expires)
+
+                # Setear cookie persistente (30 días)
+                response.set_cookie(
+                    REMEMBER_COOKIE,
+                    str(device.token),
+                    max_age=60 * 60 * 24 * REMEMBER_DAYS,
+                    httponly=True,
+                    samesite='Lax',
+                )
             else:
                 request.session.set_expiry(0)  # Expira al cerrar el browser
 
-            return redirect('dashboard')
+            return response
         else:
             return render(request, 'core/login.html', {'error': 'Datos incorrectos'})
 
@@ -107,8 +143,18 @@ def registrar_compra(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=400)
 
 def logout_view(request):
-    logout(request) # Cierra la sesión
-    return redirect('login') # Lo manda a la pantalla de entrada
+    # Eliminar token de dispositivo confiable si existe
+    cookie_token = request.COOKIES.get(REMEMBER_COOKIE)
+    if cookie_token:
+        try:
+            TrustedDevice.objects.filter(token=uuid.UUID(cookie_token)).delete()
+        except (ValueError, AttributeError):
+            pass
+
+    logout(request)  # Cierra la sesión
+    response = redirect('login')
+    response.delete_cookie(REMEMBER_COOKIE)  # Elimina la cookie
+    return response
 
 @login_required(login_url='/')
 def nueva_compra_view(request):
