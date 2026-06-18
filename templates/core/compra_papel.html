@@ -3,189 +3,292 @@
 {% load l10n %}
 
 {% block content %}
-<!-- External CSS for Premium Design -->
-<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=6.0">
-<link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.5">
+<style>
+    /* Sliding drawer layout using standard CSS for instant styling on load */
+    .cart-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 24rem; /* w-96 */
+        background-color: #ffffff;
+        border-left: 1px solid #e2e8f0;
+        z-index: 50;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(100%);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+    }
+    .dark .cart-drawer {
+        background-color: #0c0f17;
+        border-left-color: rgba(30, 41, 59, 0.8);
+    }
+    .cart-drawer.active {
+        transform: translateX(0);
+    }
+    .cart-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(2, 6, 23, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 45;
+        transition: opacity 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .cart-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
 
-<div class="content-container">
-    <div class="head-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div class="left">
-            <h1>Compra de Papel</h1>
+    /* Popups styles using standard CSS */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(2, 6, 23, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 55;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    .popup-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Restored and cleaned currency toggles inside the comparatives table */
+    .currency-slider {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dolar-toggle:checked ~ label .currency-slider {
+        transform: translateX(100%);
+    }
+    .dolar-toggle:checked ~ label .currency-label-off {
+        color: #94a3b8;
+    }
+    .dark .dolar-toggle:checked ~ label .currency-label-off {
+        color: #475569;
+    }
+    .dolar-toggle:checked ~ label .currency-label-on {
+        color: #6366f1;
+    }
+    .dark .dolar-toggle:checked ~ label .currency-label-on {
+        color: #818cf8;
+    }
+    
+    /* Config gear hover rotation effect */
+    .btn-config:hover .bx-cog {
+        transform: rotate(45deg);
+    }
+</style>
+
+<div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-title">Compra de Papel</h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Calcula el gramaje, peso y compara cotizaciones de proveedores</p>
+    </div>
+    
+    <div class="flex items-center gap-3">
+        <button type="button" id="add-to-cart-btn" onclick="addToCart()"
+                class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350 font-bold text-xs rounded-xl shadow-sm border border-slate-200 dark:border-slate-800/80 transition-all active:scale-95">
+            <i class='bx bx-plus-circle text-base'></i>
+            Agregar al Carrito
+        </button>
+        <button type="button" id="view-cart-btn" onclick="toggleCartMenu()"
+                class="relative w-10 h-10 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center text-lg shadow-lg shadow-indigo-500/25 transition-all active:scale-95">
+            <i class='bx bx-shopping-bag'></i>
+            <span id="cart-badge" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#080b11]" style="display: none;">0</span>
+        </button>
+    </div>
+</div>
+
+<!-- 1. DETALLES DEL PAPEL -->
+<form id="paper-details-form" class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 p-6 rounded-3xl shadow-sm mb-8">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-5 flex items-center gap-1.5">
+        <i class='bx bx-file text-sm'></i> Detalles del Papel
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 items-end">
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Tipo de Papel</label>
+            <input type="text" id="paper-type" placeholder="Ej: Ilustración" required
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
         </div>
-        <div class="cart-buttons-container" style="display: flex; gap: 12px; align-items: center;">
-            <button type="button" class="btn-add-cart" id="add-to-cart-btn" onclick="addToCart()">
-                <i class='bx bx-plus-circle' style="font-size: 1.2rem;"></i>
-                Agregar al Carrito
-            </button>
-            <button type="button" class="btn-view-cart" id="view-cart-btn" onclick="toggleCartMenu()">
-                <i class='bx bx-shopping-bag'></i>
-                <span id="cart-badge" style="display: none;">0</span>
-            </button>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Formato (cm)</label>
+            <div class="flex items-center gap-2">
+                <input type="number" id="format-w" placeholder="Ancho" required
+                       class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-3 text-center text-sm text-slate-800 dark:text-white placeholder-slate-400 outline-none transition-all">
+                <span class="text-slate-400 text-xs font-bold">x</span>
+                <input type="number" id="format-h" placeholder="Alto" required
+                       class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-3 text-center text-sm text-slate-800 dark:text-white placeholder-slate-400 outline-none transition-all">
+            </div>
         </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Gramaje (gr)</label>
+            <input type="number" id="grammage" placeholder="Ej: 150" required
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Cantidad (Resmas)</label>
+            <input type="number" id="default-qty" value="1" min="1" required
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white outline-none transition-all">
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Peso Resma</label>
+            <div class="relative flex items-center">
+                <input type="text" id="ream-weight" placeholder="0.00" readonly
+                       class="w-full bg-slate-100 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/40 rounded-xl py-2.5 px-4 text-sm text-slate-700 dark:text-indigo-400 font-black outline-none">
+                <span class="absolute right-4 text-xs font-bold text-slate-400">kg</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:col-span-2 md:col-span-3 lg:col-span-4">
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Observaciones generales</label>
+            <input type="text" id="observations" placeholder="Detalles adicionales o aclaraciones..."
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+        </div>
+
+        <button type="button" onclick="revealTable()"
+                class="w-full py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-950/20 active:scale-[0.98] transition-all">
+            Siguiente
+            <i class='bx bx-chevron-down text-base'></i>
+        </button>
+    </div>
+</form>
+
+<!-- 2. TABLA DE PROVEEDORES COMPARATIVA -->
+<div id="suppliers-section" style="display: none;" class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-sm overflow-hidden animate-[fadeInUp_0.4s_ease-out_forwards]">
+    <div class="p-6 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Comparativa de Precios</h3>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+            USD Venta: ${{ dolar.venta }}
+        </span>
     </div>
 
-    <!-- 1. DETALLES DEL PAPEL -->
-    <form class="insumo-form" id="paper-details-form">
-        <div class="grid-container" style="grid-template-columns: repeat(5, 1fr);">
-            <div class="card-input">
-                <label>Papel</label>
-                <div class="input-box">
-                    <input type="text" id="paper-type" placeholder="Ej: Ilustracion" required>
-                </div>
-            </div>
-            <div class="card-input">
-                <label>Formato (cm)</label>
-                <div class="input-box" style="gap: 5px;">
-                    <input type="number" id="format-w" placeholder="Ancho" required>
-                    <span>x</span>
-                    <input type="number" id="format-h" placeholder="Alto" required>
-                </div>
-            </div>
-            <div class="card-input">
-                <label>Gramaje (gr)</label>
-                <div class="input-box">
-                    <input type="number" id="grammage" placeholder="Ej: 150" required>
-                </div>
-            </div>
-            <div class="card-input">
-                <label>Cantidad (Todo)</label>
-                <div class="input-box">
-                    <input type="number" id="default-qty" value="1" min="1" required>
-                </div>
-            </div>
-            <div class="card-input">
-                <label>Peso Resma (kg)</label>
-                <div class="input-box ream-weight-box">
-                    <input type="text" id="ream-weight" placeholder="0.00" readonly style="font-weight: bold;">
-                </div>
-            </div>
-            <div class="card-input" style="grid-column: span 4;">
-                <label>Observaciones</label>
-                <div class="input-box">
-                    <input type="text" id="observations" placeholder="Detalles adicionales...">
-                </div>
-            </div>
-            <div style="display: flex; align-items: flex-end;">
-                <button type="button" class="btn-confirm" onclick="revealTable()" style="width: 100%; justify-content: center; height: 44px; margin-bottom: 0; float: none; border-radius: 10px;">
-                    Siguiente
-                    <i class='bx bx-chevron-down'></i>
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <!-- 2. TABLA DE PROVEEDORES -->
-    <div id="suppliers-section" style="display: none; margin-top: 40px; padding-bottom: 50px;">
-        <div class="table-data" style="background: transparent; box-shadow: none; padding: 0;">
-            <div class="order">
-                <div class="head">
-                    <h3>Comparativa de Precios</h3>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span style="font-size: 0.9rem; font-weight: 600; color: #666;">USD Venta: <span
-                                style="color: var(--blue);">${{ dolar.venta }}</span></span>
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Proveedor</th>
-                            <th>Peso Total</th>
-                            <th style="width: 20%;">Precio/Kg</th>
-                            <th style="width: 15%; text-align: center;">Moneda</th>
-                            <th style="width: 15%; text-align: right;">Precio Resma</th>
-                            <th style="width: 10%; text-align: center;">Cant.</th>
-                            <th style="width: 15%; text-align: right;">Total</th>
-                            <th style="width: 10%; text-align: center;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="supplier-rows">
-                        <!-- Rows injected by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-slate-200/50 dark:border-slate-800/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <th class="py-4 px-6">Proveedor</th>
+                    <th class="py-4 px-6">Peso & specs</th>
+                    <th class="py-4 px-6 w-36">Precio / kg</th>
+                    <th class="py-4 px-6 text-center w-28">Moneda</th>
+                    <th class="py-4 px-6 text-right w-36">Precio Resma</th>
+                    <th class="py-4 px-6 text-center w-28">Cant.</th>
+                    <th class="py-4 px-6 text-right w-40">Total Neto</th>
+                    <th class="py-4 px-6 text-center w-24">Comprar</th>
+                </tr>
+            </thead>
+            <tbody id="supplier-rows" class="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
+                <!-- Javascript injected rows -->
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- CART DRAWER & OVERLAY -->
+<div id="cart-overlay" class="cart-overlay" onclick="toggleCartMenu()"></div>
 <div id="cart-drawer" class="cart-drawer">
-    <div class="cart-drawer-header">
-        <h3><i class='bx bx-shopping-bag'></i> Borradores Guardados</h3>
-        <button onclick="toggleCartMenu()" class="btn-close-cart">&times;</button>
+    <div class="p-6 border-b border-slate-200 dark:border-slate-800/50 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2 font-title">
+            <i class='bx bx-shopping-bag text-indigo-500 text-lg'></i>
+            Borradores Guardados
+        </h3>
+        <button onclick="toggleCartMenu()" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-400 dark:text-slate-500 flex items-center justify-center text-xl transition-colors">&times;</button>
     </div>
-    <div class="cart-drawer-body" id="cart-items-container">
-        <!-- Cart items dynamically rendered here -->
+    
+    <!-- Drawer contents -->
+    <div id="cart-items-container" class="flex-grow p-6 overflow-y-auto space-y-4">
+        <!-- Rendered by JS -->
     </div>
 </div>
-<div id="cart-overlay" class="cart-overlay" onclick="toggleCartMenu()"></div>
 
-<!-- POPUPS -->
+<!-- CONFIRMATION POPUPS -->
 <div id="confirm-popup" class="popup-overlay">
-    <div class="popup-content">
-        <div class="icon-checkmark" style="background: var(--orange);">
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative">
+        <div class="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-950/20 text-amber-500 dark:text-amber-400 flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
             <i class='bx bx-question-mark'></i>
         </div>
-        <h2>Confirmar Compra</h2>
-        <p id="popup-message">¿Seguro quieres comprar a ...?</p>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-            <button class="btn-confirm" style="background: var(--red);" onclick="closePopup()">Cancelar</button>
-            <button class="btn-confirm" style="background: var(--green);" onclick="submitPurchase()">Confirmar</button>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-white font-title">Confirmar Compra</h2>
+        <p id="popup-message" class="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6">¿Estás seguro de registrar este pedido?</p>
+        
+        <div class="flex gap-3 justify-center">
+            <button class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold text-sm transition-all" onclick="closePopup()">Cancelar</button>
+            <button class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm shadow-lg shadow-emerald-500/15 transition-all" onclick="submitPurchase()">Confirmar</button>
         </div>
     </div>
 </div>
 
 <div id="success-popup" class="popup-overlay">
-    <div class="popup-content" style="position: relative; padding-bottom: 50px;">
-        <i class='bx bx-check-circle' style="font-size: 60px; color: var(--blue); margin-bottom: 15px;"></i>
-        <h2 style="font-size: 24px; color: var(--dark); margin-bottom: 10px;">¡Orden Creada!</h2>
-        <p style="color: #666; font-size: 16px; margin-bottom: 25px;">La orden de compra se registró correctamente.</p>
-
-        <div style="display: flex; justify-content: center;">
-            <a id="btn-view-order" href="#" class="btn-confirm"
-                style="text-decoration: none; padding: 12px 30px; font-size: 16px; border-radius: 8px;">
-                Ver Orden de Compra
-            </a>
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative">
+        <div class="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-3xl mx-auto mb-4">
+            <i class='bx bx-check-circle'></i>
         </div>
-
-        <button onclick="location.reload()"
-            style="position: absolute; bottom: 15px; right: 15px; background: #db504a; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-            <i class='bx bx-x'></i> Cerrar
-        </button>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-white font-title">¡Orden Creada!</h2>
+        <p class="text-sm text-slate-400 dark:text-slate-500 mt-2 mb-6">La orden de compra se registró con éxito.</p>
+        
+        <div class="flex flex-col gap-2">
+            <a id="btn-view-order" href="#" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm text-decoration-none shadow-md shadow-indigo-500/10 flex items-center justify-center gap-1.5">
+                <i class='bx bx-file'></i> Ver Orden
+            </a>
+            <button class="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-850 text-slate-400 dark:text-slate-500 font-bold text-xs" onclick="location.reload()">Cerrar</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN INICIAL ---
+    // --- TOGGLE ROW CONFIG SPECIFICATIONS ---
+    function toggleConfigRow(btn) {
+        const wrapper = btn.closest('div').nextElementSibling;
+        if (wrapper) {
+            wrapper.classList.toggle('hidden');
+            wrapper.classList.toggle('flex');
+        }
+    }
+
+    // --- INITIAL CONFIG ---
     const suppliers = ['Dimagraf', 'Cava', 'Resmacon', 'Gravent', 'Castinver', 'Hutton', 'Stenfar', 'Pergamino', 'Tucuman'];
 
-    // 1. OBTENER COTIZACIÓN
     let dolarString = "{{ dolar.venta|default:'0' }}";
     let dolarRate = parseFloat(dolarString.replace(/\./g, '').replace(',', '.')) || 0;
-
     let rawReamWeight = 0;
 
-    // Formateador para mostrar en pantalla (Argentina: 1.000,00)
     const formatter = new Intl.NumberFormat('es-AR', {
         style: 'decimal',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
 
-    // Helper inputs 
     function parseVal(id) {
         let v = document.getElementById(id).value;
         return parseFloat(v.replace(',', '.')) || 0;
     }
 
-    // A. CALCULAR PESO RESMA GENERAL
+    // A. CALCULATE GENERAL WEIGHT
     function calculateWeight() {
         const w = parseVal('format-w');
         const h = parseVal('format-h');
         const g = parseVal('grammage');
 
-        // Fórmula: (Ancho * Alto * Gramaje) / 20000
         rawReamWeight = (w * h * g) / 20000;
-
         document.getElementById('ream-weight').value = formatter.format(rawReamWeight);
         updateAllRows();
     }
@@ -194,7 +297,6 @@
         document.getElementById(id).addEventListener('input', calculateWeight);
     });
 
-    // Sincronizar cantidad por defecto con todas las filas
     document.getElementById('default-qty').addEventListener('input', function() {
         const qtyVal = parseInt(this.value) || 1;
         document.querySelectorAll('#supplier-rows .qty-input').forEach(input => {
@@ -203,7 +305,7 @@
         });
     });
 
-    // B. GENERAR TABLA (PREMIUM DESIGN + CYBER TOGGLE REMADE)
+    // B. GENERATE SUPPLIERS TABLE ROW WITH TAILWIND DESIGN
     function revealTable() {
         calculateWeight();
         if (rawReamWeight <= 0) { alert('Revisar medidas.'); return; }
@@ -218,91 +320,73 @@
 
         suppliers.forEach((name, index) => {
             const tr = document.createElement('tr');
-            const uniqueId = `cyber-toggle-${index}`;
+            const uniqueId = `dolar-toggle-${index}`;
+            tr.className = "hover:bg-slate-50/40 dark:hover:bg-slate-900/20 transition-colors";
 
             tr.innerHTML = `
-                <td>
-                    <div class="supplier-name">
-                        <i class='bx bxs-business'></i>
+                <td class="py-4 px-6 font-bold text-slate-700 dark:text-slate-300 font-title">
+                    <div class="flex items-center gap-2">
+                        <i class='bx bxs-business text-slate-400 dark:text-slate-600'></i>
                         <span>${name}</span>
                     </div>
                 </td>
-                <td>
-                    <div class="row-spec-container">
-                        <span class="badge-weight">${formatter.format(rawReamWeight)} kg</span>
-                        <div class="spec-edit-group">
-                            <input type="number" class="spec-w-input row-spec-input" value="${w}" title="Ancho">
-                            <span style="font-size: 0.7rem; color: #999;">x</span>
-                            <input type="number" class="spec-h-input row-spec-input" value="${h}" title="Alto">
-                            <span style="font-size: 0.7rem; color: #999;">g</span>
-                            <input type="number" class="spec-g-input row-spec-input" value="${g}" title="Gramaje">
+                <td class="py-4 px-6">
+                    <div class="flex flex-col gap-2 justify-center">
+                        <div class="flex items-center gap-2 flex-nowrap">
+                            <span class="badge-weight whitespace-nowrap px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-xs font-bold text-slate-600 dark:text-slate-400 shrink-0">${formatter.format(rawReamWeight)} kg</span>
+                            <button type="button" class="btn-config text-slate-400 hover:text-indigo-500 transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center shrink-0" onclick="toggleConfigRow(this)" title="Modificar especificaciones">
+                                <i class='bx bx-cog text-base transition-transform duration-200'></i>
+                            </button>
+                        </div>
+                        <div class="config-inputs-wrapper hidden items-center gap-1 shrink-0 bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded-xl border border-slate-200/50 dark:border-slate-800/40 w-max shadow-inner">
+                            <input type="number" class="spec-w-input w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 text-center text-xs text-slate-600 dark:text-slate-400 outline-none focus:border-indigo-500" value="${w}" title="Ancho">
+                            <span class="text-[10px] text-slate-400">x</span>
+                            <input type="number" class="spec-h-input w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 text-center text-xs text-slate-600 dark:text-slate-400 outline-none focus:border-indigo-500" value="${h}" title="Alto">
+                            <span class="text-[10px] text-slate-400 font-bold ml-1">g:</span>
+                            <input type="number" class="spec-g-input w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5 text-center text-xs text-slate-600 dark:text-slate-400 outline-none focus:border-indigo-500" value="${g}" title="Gramaje">
                         </div>
                     </div>
                 </td>
                 
-                <td>
-                    <div class="input-group-modern">
-                        <span class="currency-symbol">$</span>
-                        <input type="number" class="price-input" placeholder="0.00" step="0.01">
+                <td class="py-4 px-6">
+                    <div class="relative flex items-center">
+                        <span class="currency-symbol absolute left-3 text-xs font-bold text-slate-400">$</span>
+                        <input type="number" class="price-input w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1.5 pl-10 pr-3 text-xs text-slate-700 dark:text-slate-300 font-bold outline-none focus:border-indigo-500" placeholder="0.00" step="0.01">
                     </div>
                 </td>
                 
-                <td class="toggle-cell">
-                    <!-- CYBER TOGGLE RESTORED -->
-                    <div class="cyber-toggle-wrapper">
-                        <input class="cyber-toggle-checkbox dolar-toggle" id="${uniqueId}" type="checkbox" />
-                        <label class="cyber-toggle" for="${uniqueId}">
-                            <div class="cyber-toggle-track">
-                                <div class="cyber-toggle-track-glow"></div>
-                                <div class="cyber-toggle-track-dots">
-                                    <span class="cyber-toggle-track-dot"></span>
-                                    <span class="cyber-toggle-track-dot"></span>
-                                    <span class="cyber-toggle-track-dot"></span>
-                                </div>
-                            </div>
-                            <div class="cyber-toggle-thumb">
-                                <div class="cyber-toggle-thumb-shadow"></div>
-                                <div class="cyber-toggle-thumb-highlight"></div>
-                                <div class="cyber-toggle-thumb-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                        <path d="M16.5 12c0-2.48-2.02-4.5-4.5-4.5s-4.5 2.02-4.5 4.5 2.02 4.5 4.5 4.5 4.5-2.02 4.5-4.5zm-4.5 7.5c-4.14 0-7.5-3.36-7.5-7.5s3.36-7.5 7.5-7.5 7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5zm0-16.5c-4.97 0-9 4.03-9 9h-3l3.89 3.89.07.14 4.04-4.03h-3c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42c1.63 1.63 3.87 2.64 6.36 2.64 4.97 0 9-4.03 9-9s-4.03-9-9-9z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="cyber-toggle-particles">
-                                <span class="cyber-toggle-particle"></span>
-                                <span class="cyber-toggle-particle"></span>
-                                <span class="cyber-toggle-particle"></span>
-                                <span class="cyber-toggle-particle"></span>
-                            </div>
+                <td class="py-4 px-6 text-center">
+                    <div class="relative flex items-center justify-center h-8 w-20 bg-slate-100 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/80 rounded-xl p-0.5 select-none mx-auto">
+                        <input class="dolar-toggle sr-only" id="${uniqueId}" type="checkbox" />
+                        <label class="cursor-pointer flex items-center justify-between w-full h-full text-[10px] font-black relative z-10 px-2.5" for="${uniqueId}">
+                            <span class="currency-label-off text-indigo-500 transition-colors">ARS</span>
+                            <span class="currency-label-on text-slate-400 dark:text-slate-600 transition-colors">USD</span>
+                            <div class="currency-slider absolute top-0.5 bottom-0.5 left-0.5 w-[37px] bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-850 rounded-lg -z-10 transition-all duration-200 transform"></div>
                         </label>
-                        <div class="cyber-toggle-labels">
-                            <span class="cyber-toggle-label-off">ARS</span>
-                            <span class="cyber-toggle-label-on">USD</span>
-                        </div>
                     </div>
                 </td>
 
-                <td class="text-right"><span class="row-ream-price">$ 0,00</span></td>
-                
-                <td class="text-center">
-                    <div class="qty-control">
-                        <input type="number" class="qty-input" value="${defaultQtyVal}" min="1">
-                    </div>
+                <td class="py-4 px-6 text-right font-bold text-slate-700 dark:text-slate-300">
+                    <span class="row-ream-price">$ 0,00</span>
                 </td>
                 
-                <td class="text-right"><span class="row-total-final">$ 0,00</span></td>
+                <td class="py-4 px-6 text-center">
+                    <input type="number" class="qty-input w-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-1 px-2 text-center text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-indigo-500" value="${defaultQtyVal}" min="1">
+                </td>
                 
-                <td class="text-center">
-                    <button class="btn-shop" onclick="confirmPurchase('${name}', this)">
-                        <i class='bx bx-cart-alt'></i>
+                <td class="py-4 px-6 text-right font-black text-slate-850 dark:text-indigo-400">
+                    <span class="row-total-final text-base">$ 0,00</span>
+                </td>
+                
+                <td class="py-4 px-6 text-center">
+                    <button class="btn-shop w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white flex items-center justify-center shadow-inner transition-all duration-150 active:scale-90" onclick="confirmPurchase('${name}', this)">
+                        <i class='bx bx-cart-alt text-lg'></i>
                     </button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Activar eventos
         tbody.querySelectorAll('input').forEach(el => {
             el.addEventListener('input', updateRowCalculation);
             el.addEventListener('change', updateRowCalculation);
@@ -314,64 +398,45 @@
         }, 100);
     }
 
-    // C. CÁLCULO (ROW SPECIFIC VALUES)
+    // C. DYNAMIC CALCULATIONS
     function updateRowCalculation(e) {
         const row = e.target.closest('tr');
         if (!row) return;
 
-        // A. LEER VALORES DE FILA
         const priceInputVal = parseFloat(row.querySelector('.price-input').value) || 0;
         const isDolar = row.querySelector('.dolar-toggle').checked;
         const qty = parseInt(row.querySelector('.qty-input').value) || 1;
 
-        // Leer especificaciones de papel individuales de la fila
         const w = parseFloat(row.querySelector('.spec-w-input').value) || 0;
         const h = parseFloat(row.querySelector('.spec-h-input').value) || 0;
         const g = parseFloat(row.querySelector('.spec-g-input').value) || 0;
 
-        // Calcular peso de resma individual para esta fila
         const weight = (w * h * g) / 20000;
-
-        // B. CALCULAR PRECIO REAL POR KILO (EN PESOS)
         let finalPricePerKg = priceInputVal;
 
         if (isDolar) {
             finalPricePerKg = priceInputVal * dolarRate;
         }
 
-        // C. CALCULAR UNITARIO DE LA RESMA (Peso x Precio/Kg Real)
         let reamUnitPrice = weight * finalPricePerKg;
-
-        // D. CALCULAR TOTAL (Unitario x Cantidad)
         let totalFinal = reamUnitPrice * qty;
 
-        // --- VISUALIZACIÓN ---
-
-        // Actualizar el peso de la fila en pantalla
         row.querySelector('.badge-weight').innerText = formatter.format(weight) + ' kg';
-
-        // Símbolo de moneda en el input
         row.querySelector('.currency-symbol').innerText = isDolar ? 'u$d' : '$';
-
-        // Precio Unitario (Conversión a pesos)
         row.querySelector('.row-ream-price').innerText = '$ ' + formatter.format(reamUnitPrice);
 
-        // Total Final
         const totalSpan = row.querySelector('.row-total-final');
         totalSpan.innerText = '$ ' + formatter.format(totalFinal);
-        totalSpan.style.color = 'var(--blue)';
 
-        // Styling extra para moneda
         const curSym = row.querySelector('.currency-symbol');
         if (isDolar) {
-            curSym.style.color = 'var(--blue)';
-            curSym.style.fontWeight = '800';
+            curSym.classList.add('text-indigo-500');
+            curSym.classList.remove('text-slate-400');
         } else {
-            curSym.style.color = '#adb5bd';
-            curSym.style.fontWeight = '700';
+            curSym.classList.remove('text-indigo-500');
+            curSym.classList.add('text-slate-400');
         }
 
-        // Guardamos el dato crudo para enviarlo al backend luego
         row.dataset.totalFinal = totalFinal;
     }
 
@@ -382,7 +447,7 @@
         });
     }
 
-    // 4. CONFIRMAR COMPRA
+    // D. CONFIRM
     function confirmPurchase(supplierName, btn) {
         const row = btn.closest('tr');
         const total = parseFloat(row.dataset.totalFinal) || 0;
@@ -395,14 +460,12 @@
         document.getElementById('popup-message').innerText = `¿Confirmar compra a ${supplierName} por $ ${formatter.format(total)}?`;
         document.getElementById('confirm-popup').classList.add('active');
 
-        // Guardar datos temporales para el envío usando los valores individuales de la fila
         const qty = row.querySelector('.qty-input').value;
         const type = document.getElementById('paper-type').value;
         const w = row.querySelector('.spec-w-input').value;
         const h = row.querySelector('.spec-h-input').value;
         const g = row.querySelector('.spec-g-input').value;
 
-        // FORMATO EXACTO PARA REGEX BACKEND: Papel [Tipo] [Ancho]x[Alto] [Gram]gr (x[Cant])
         window.tempPurchaseData = {
             proveedor: supplierName,
             total: total,
@@ -414,7 +477,6 @@
         document.getElementById('confirm-popup').classList.remove('active');
     }
 
-    // 5. ENVIAR DATOS
     function submitPurchase() {
         if (!window.tempPurchaseData) return;
 
@@ -442,8 +504,7 @@
         });
     }
 
-    // --- LÓGICA DEL CARRITO DE BORRADORES ---
-
+    // --- CART DRAWER LOGIC ---
     function toggleCartMenu() {
         document.getElementById('cart-drawer').classList.toggle('active');
         document.getElementById('cart-overlay').classList.toggle('active');
@@ -479,18 +540,17 @@
 
         updateCartUI();
 
-        // Animación de rebote en el botón de carrito
         const viewCartBtn = document.getElementById('view-cart-btn');
         if (viewCartBtn) {
-            viewCartBtn.style.transform = 'scale(1.15)';
+            viewCartBtn.classList.add('scale-110', 'bg-indigo-500');
             setTimeout(() => {
-                viewCartBtn.style.transform = 'scale(1)';
+                viewCartBtn.classList.remove('scale-110', 'bg-indigo-500');
             }, 200);
         }
     }
 
     function deleteCartItem(id, event) {
-        if (event) event.stopPropagation(); // Evitar cargar el borrador al hacer clic en borrar
+        if (event) event.stopPropagation();
         let cart = JSON.parse(localStorage.getItem('paper_cart') || '[]');
         cart = cart.filter(item => item.id !== id);
         localStorage.setItem('paper_cart', JSON.stringify(cart));
@@ -509,10 +569,7 @@
         document.getElementById('default-qty').value = draft.qty;
         document.getElementById('observations').value = draft.obs || '';
 
-        // Calcular y mostrar tabla
         revealTable();
-
-        // Cerrar menú
         toggleCartMenu();
     }
 
@@ -521,7 +578,6 @@
         const badge = document.getElementById('cart-badge');
         const container = document.getElementById('cart-items-container');
 
-        // Badge
         if (cart.length > 0) {
             badge.innerText = cart.length;
             badge.style.display = 'flex';
@@ -529,44 +585,39 @@
             badge.style.display = 'none';
         }
 
-        // Items
         if (cart.length === 0) {
             container.innerHTML = `
-                <div class="cart-empty-message">
-                    <i class='bx bx-shopping-bag'></i>
-                    <p style="font-weight: 600; margin: 0;">No hay borradores guardados</p>
-                    <p style="font-size: 0.8rem; color: #adb5bd; margin: 0;">Agrega tu orden actual con el botón "Agregar al Carrito"</p>
+                <div class="flex flex-col items-center justify-center py-12 text-center text-slate-400 dark:text-slate-500">
+                    <i class='bx bx-shopping-bag text-5xl mb-3 opacity-60'></i>
+                    <p class="font-bold text-sm text-slate-700 dark:text-slate-300">Sin borradores guardados</p>
+                    <p class="text-xs mt-1">Guarda tus cálculos de papel para cargarlos después.</p>
                 </div>
             `;
         } else {
             container.innerHTML = '';
-            // Render de más nuevo a más viejo
             cart.slice().reverse().forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'cart-item-card';
+                card.className = 'group relative p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer hover:border-indigo-500/50 transition-all duration-200 shadow-sm';
                 card.onclick = () => loadDraft(item.id);
 
                 card.innerHTML = `
-                    <button class="btn-delete-cart-item" onclick="deleteCartItem('${item.id}', event)" title="Eliminar borrador">
-                        <i class='bx bx-trash'></i>
+                    <button class="absolute top-3 right-3 w-7 h-7 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 flex items-center justify-center transition-colors" onclick="deleteCartItem('${item.id}', event)" title="Eliminar borrador">
+                        <i class='bx bx-trash text-sm'></i>
                     </button>
-                    <div class="cart-item-title">${item.type}</div>
-                    <div class="cart-item-specs">
-                        <span class="cart-item-spec-badge">${item.w} x ${item.h} cm</span>
-                        <span class="cart-item-spec-badge">${item.g} gr</span>
-                        <span class="cart-item-spec-badge">x${item.qty} u</span>
+                    <div class="font-bold text-sm text-slate-800 dark:text-white pr-6">${item.type}</div>
+                    <div class="flex flex-wrap gap-1 mt-2.5">
+                        <span class="px-2 py-0.5 rounded bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400">${item.w} x ${item.h} cm</span>
+                        <span class="px-2 py-0.5 rounded bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400">${item.g} gr</span>
+                        <span class="px-2 py-0.5 rounded bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400">x${item.qty} u</span>
                     </div>
-                    ${item.obs ? `<div class="cart-item-obs" title="${item.obs}">${item.obs}</div>` : ''}
-                    <div class="cart-item-footer">
-                        <span>${item.timestamp}</span>
-                    </div>
+                    ${item.obs ? `<div class="text-[11px] text-slate-400 dark:text-slate-500 mt-2 truncate w-full" title="${item.obs}">${item.obs}</div>` : ''}
+                    <div class="text-[10px] text-slate-400 dark:text-slate-600 mt-3 font-semibold">${item.timestamp}</div>
                 `;
                 container.appendChild(card);
             });
         }
     }
 
-    // Inicializar UI al cargar
     document.addEventListener('DOMContentLoaded', () => {
         updateCartUI();
     });

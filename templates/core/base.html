@@ -6,126 +6,222 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="{% static 'css/menu.css' %}?v=2">
-    <title>Sistema Compras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
+                        title: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkbg: {
+                            DEFAULT: '#0b0f19',
+                            card: '#161b26',
+                            border: '#222b3c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        /* custom layout rules for sidebar transitions compatible with menu.js */
+        #sidebar {
+            width: 260px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #sidebar.hide {
+            width: 80px;
+        }
+        #sidebar.hide .text {
+            opacity: 0;
+            width: 0;
+            pointer-events: none;
+            overflow: hidden;
+            display: none;
+        }
+        #sidebar.hide .brand-logo {
+            margin-right: 0;
+        }
+        #sidebar.hide .brand-title {
+            opacity: 0;
+            width: 0;
+            display: none;
+        }
+        
+        #content {
+            left: 260px;
+            width: calc(100% - 260px);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #sidebar.hide ~ #content {
+            left: 80px;
+            width: calc(100% - 80px);
+        }
+        
+        /* Mobile View Rules */
+        @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+                width: 260px !important;
+            }
+            #sidebar.show {
+                transform: translateX(0);
+            }
+            #content {
+                left: 0 !important;
+                width: 100% !important;
+            }
+            #sidebar.show ~ #content {
+                left: 0 !important;
+                width: 100% !important;
+            }
+        }
+
+        /* Sidebar active styles */
+        .side-menu li {
+            position: relative;
+        }
+        .side-menu li a {
+            @apply flex items-center gap-4 px-4 py-3 mx-3 my-1 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/60 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-200;
+        }
+        .side-menu li.active a {
+            @apply bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 dark:shadow-indigo-950/50 hover:text-white dark:hover:text-white;
+        }
+    </style>
+    <title>Nextprint - Compras</title>
     <script>
         // Check dark mode immediately to prevent flash
         if (localStorage.getItem('darkMode') === 'enabled') {
-            document.documentElement.classList.add('dark'); // Apply to html or body
-            // We can't access body safely in head, so we often use documentElement or wait for body
-            // However, class 'dark' is on body in CSS.
-            // Best practice: add to documentElement (html tag) and update CSS to support both, 
-            // OR use a blocking script in body.
-            // Given the CSS uses body.dark, we should try to add it to body as soon as possible.
-            // Let's add an early script right after body open if possible, or use DOMContentLoaded for the switch but apply class here if we can target html?
-            // Checking CSS: body.dark { ... }
-            // Let's update CSS to support html.dark as well OR just wait for body.
-            // Actually, simplest is to put this script right inside <body> start.
+            document.documentElement.classList.add('dark');
         }
     </script>
 </head>
 
-<body>
+<body class="bg-slate-50 dark:bg-[#080b11] text-slate-800 dark:text-slate-200 min-h-screen transition-colors duration-300 font-sans">
 
-    <section id="sidebar">
-        <a href="#" class="brand" id="brand-link">
-            <img src="{% static 'img/logo_nextprint.jpeg' %}" alt="Logo NP" class="brand-logo">
+    <!-- SIDEBAR -->
+    <section id="sidebar" class="fixed top-0 left-0 h-screen z-50 bg-white dark:bg-[#0c0f17] border-r border-slate-200 dark:border-slate-800/80 flex flex-col justify-between">
+        <div>
+            <a href="{% url 'dashboard' %}" class="brand flex items-center gap-3 px-6 py-5 border-b border-slate-200/50 dark:border-slate-800/50">
+                <img src="{% static 'img/logo_nextprint.jpeg' %}" alt="Logo NP" class="brand-logo w-9 h-9 rounded-lg object-cover shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+                <span class="brand-title text font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Nextprint</span>
+            </a>
+            
+            <ul class="side-menu mt-6 flex flex-col gap-1">
+                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class='bx bxs-dashboard text-xl'></i>
+                        <span class="text font-semibold text-sm">Inicio</span>
+                    </a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'nueva_compra' or request.resolver_match.url_name == 'compra_insumo' or request.resolver_match.url_name == 'compra_papel' %}active{% endif %}">
+                    <a href="{% url 'nueva_compra' %}">
+                        <i class='bx bxs-shopping-bag-alt text-xl'></i>
+                        <span class="text font-semibold text-sm">Nueva Compra</span>
+                    </a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'ordenes_lista' %}active{% endif %}">
+                    <a href="{% url 'ordenes_lista' %}">
+                        <i class='bx bxs-doughnut-chart text-xl'></i>
+                        <span class="text font-semibold text-sm">Órdenes</span>
+                    </a>
+                </li>
+                <li class="{% if request.resolver_match.url_name == 'historial' %}active{% endif %}">
+                    <a href="{% url 'historial' %}">
+                        <i class='bx bxs-message-dots text-xl'></i>
+                        <span class="text font-semibold text-sm">Historial</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
 
-            <span class="text">Nextprint</span>
-        </a>
-        <ul class="side-menu top">
-            <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <a href="{% url 'dashboard' %}">
-                    <i class='bx bxs-dashboard bx-sm'></i>
-                    <span class="text">Inicio</span>
-                </a>
-            </li>
-            <li
-                class="{% if request.resolver_match.url_name == 'nueva_compra' or request.resolver_match.url_name == 'compra_insumo' %}active{% endif %}">
-                <a href="{% url 'nueva_compra' %}">
-                    <i class='bx bxs-shopping-bag-alt bx-sm'></i>
-                    <span class="text">Nueva Compra</span>
-                </a>
-            </li>
-            <li class="{% if request.resolver_match.url_name == 'ordenes_lista' %}active{% endif %}">
-                <a href="{% url 'ordenes_lista' %}">
-                    <i class='bx bxs-doughnut-chart bx-sm'></i>
-                    <span class="text">Ordenes</span>
-                </a>
-            </li>
+        <ul class="side-menu mb-6">
             <li>
-                <a href="{% url 'historial' %}"> <i class='bx bxs-message-dots bx-sm'></i>
-                    <span class="text">Historial</span>
-                </a>
-            </li>
-        </ul>
-        <ul class="side-menu bottom">
-            <li>
-                <a href="{% url 'logout' %}" class="logout">
-                    <i class='bx bx-power-off bx-sm bx-burst-hover'></i>
-                    <span class="text">Salir</span>
+                <a href="{% url 'logout' %}" class="logout text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400">
+                    <i class='bx bx-power-off text-xl'></i>
+                    <span class="text font-semibold text-sm">Salir</span>
                 </a>
             </li>
         </ul>
     </section>
 
-    <section id="content">
-        <nav>
-            <i class='bx bx-menu bx-sm'></i>
+    <!-- CONTENT WRAPPER -->
+    <section id="content" class="relative min-h-screen flex flex-col">
+        <!-- NAVBAR -->
+        <nav class="sticky top-0 z-40 w-full h-16 bg-white/80 dark:bg-[#0c0f17]/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6">
+            <div class="flex items-center gap-4">
+                <i class='bx bx-menu text-2xl cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors'></i>
+            </div>
 
-            <form action="#">
-                <div class="form-input">
-                    <input type="search" placeholder="Buscar...">
-                    <button type="submit" class="search-btn"><i class='bx bx-search'></i></button>
-                </div>
-            </form>
-            <!-- BB8 Toggle in Navbar (Scaled down) -->
-            <link rel="stylesheet" href="{% static 'css/bb8-toggle.css' %}">
-            <label class="bb8-toggle" for="switch-mode" style="font-size: 6px; margin-top: 0;">
-                <input class="bb8-toggle__checkbox" type="checkbox" id="switch-mode">
-                <div class="bb8-toggle__container">
-                    <div class="bb8-toggle__scenery">
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="bb8-toggle__star"></div>
-                        <div class="tatto-1"></div>
-                        <div class="tatto-2"></div>
-                        <div class="gomrassen"></div>
-                        <div class="hermes"></div>
-                        <div class="chenini"></div>
-                        <div class="bb8-toggle__cloud"></div>
-                        <div class="bb8-toggle__cloud"></div>
-                        <div class="bb8-toggle__cloud"></div>
+            <div class="flex items-center gap-6">
+                <!-- Theme Switch -->
+                <label class="relative inline-flex items-center cursor-pointer select-none">
+                    <input type="checkbox" id="switch-mode" class="sr-only peer">
+                    <div class="w-14 h-7 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[28px] after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white dark:after:bg-indigo-500 after:border-slate-300 dark:after:border-indigo-900 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-900 flex items-center justify-between px-2 text-[10px] text-slate-400">
+                        <i class="bx bx-sun text-amber-500 text-sm"></i>
+                        <i class="bx bx-moon text-indigo-400 text-sm"></i>
                     </div>
-                    <div class="bb8">
-                        <div class="bb8__head-container">
-                            <div class="bb8__antenna"></div>
-                            <div class="bb8__antenna"></div>
-                            <div class="bb8__head"></div>
-                        </div>
-                        <div class="bb8__body"></div>
+                </label>
+                <script>
+                    (function() {
+                        const switchMode = document.getElementById('switch-mode');
+                        if (localStorage.getItem('darkMode') === 'enabled') {
+                            switchMode.checked = true;
+                            document.documentElement.classList.add('dark');
+                            document.body.classList.add('dark');
+                        }
+                        switchMode.addEventListener('change', function () {
+                            if (this.checked) {
+                                document.documentElement.classList.add('dark');
+                                document.body.classList.add('dark');
+                                localStorage.setItem('darkMode', 'enabled');
+                            } else {
+                                document.documentElement.classList.remove('dark');
+                                document.body.classList.remove('dark');
+                                localStorage.setItem('darkMode', 'disabled');
+                            }
+                        });
+                    })();
+                </script>
+
+                <!-- Profile Link -->
+                <a href="#" class="profile flex items-center gap-3 group">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">{{ user.first_name|default:user.username }}</p>
+                        <p class="text-[10px] text-slate-400 font-medium">Administrador</p>
                     </div>
-                    <div class="artificial__hidden">
-                        <div class="bb8__shadow"></div>
+                    <div class="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-slate-200 dark:ring-slate-800 group-hover:ring-indigo-500 transition-all">
+                        <img src="{{ user.profile.photo_url }}" alt="Profile" class="w-full h-full object-cover">
                     </div>
-                </div>
-            </label>
-            <a href="#" class="profile">
-                <span style="margin-right: 10px; font-weight: 600; color: var(--dark);">{{ user.first_name }}</span>
-                <img src="{{ user.profile.photo_url }}" alt="Profile">
-            </a>
+                </a>
+            </div>
         </nav>
 
-        <main>
+        <!-- MAIN CONTENT -->
+        <main class="flex-grow p-6 md:p-8 max-w-7xl w-full mx-auto">
             {% block content %}
             {% endblock %}
         </main>
     </section>
 
+    <!-- JS menu -->
     <script src="{% static 'js/menu.js' %}?v=2"></script>
 </body>
 

@@ -3,240 +3,119 @@
 
 {% block content %}
 <style>
-    .compra-wrapper {
-        max-width: 960px;
-        margin: 0 auto;
-    }
-
-    /* ── Header cabecera ── */
-    .section-card {
-        background: var(--light);
-        border-radius: 12px;
-        padding: 24px 28px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .section-title {
-        font-size: 13px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        color: var(--blue);
-        margin-bottom: 16px;
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(2, 6, 23, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 50;
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+    .popup-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
     }
 
-    .header-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-
-    /* ── Ítems ── */
-    .items-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .item-row {
-        display: grid;
-        grid-template-columns: 2fr 1.2fr 100px 140px 36px;
-        gap: 10px;
-        align-items: center;
-        background: var(--light);
-        border-radius: 10px;
-        padding: 14px 16px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        animation: slideIn 0.2s ease;
+    .blur-active {
+        filter: blur(4px);
+        transition: filter 0.3s ease;
     }
 
     @keyframes slideIn {
-        from { opacity: 0; transform: translateY(-6px); }
+        from { opacity: 0; transform: translateY(-8px); }
         to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .item-row .input-box {
-        margin: 0;
-    }
-
-    .item-row label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 4px;
-        display: block;
-    }
-
-    .btn-remove-item {
-        background: transparent;
-        border: 1.5px solid #e0e0e0;
-        color: #bbb;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        align-self: flex-end;
-    }
-    .btn-remove-item:hover {
-        border-color: #e53935;
-        color: #e53935;
-        background: #fff5f5;
-    }
-
-    /* ── Botón agregar ítem ── */
-    .btn-add-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        background: transparent;
-        border: 2px dashed var(--blue);
-        color: var(--blue);
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        width: 100%;
-        justify-content: center;
-        transition: all 0.2s;
-        margin-top: 4px;
-    }
-    .btn-add-item:hover {
-        background: rgba(59, 130, 246, 0.06);
-    }
-
-    /* ── Total en tiempo real ── */
-    .total-bar {
-        background: var(--blue);
-        color: white;
-        border-radius: 10px;
-        padding: 16px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    .total-bar .label {
-        font-size: 14px;
-        opacity: 0.85;
-    }
-    .total-bar .amount {
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-
-    /* ── Reutiliza estilos existentes ── */
-    .card-input {
-        display: flex;
-        flex-direction: column;
-    }
-    .card-input label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-    }
-
-    @media (max-width: 700px) {
-        .item-row {
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto auto;
-        }
-        .btn-remove-item { grid-column: 2; justify-self: end; align-self: center; }
-        .header-grid { grid-template-columns: 1fr; }
     }
 </style>
 
-<div class="content-container">
-    <div class="head-title">
-        <div class="left">
-            <h1>Compra de Insumo</h1>
-        </div>
-    </div>
-
-    <div class="compra-wrapper">
-
-        <!-- ── Cabecera: Proveedor + Observaciones ── -->
-        <div class="section-card">
-            <div class="section-title">
-                <i class='bx bxs-store'></i> Datos de la Compra
-            </div>
-            <div class="header-grid">
-                <div class="card-input">
-                    <label>Proveedor</label>
-                    <div class="input-box">
-                        <i class='bx bxs-store'></i>
-                        <input id="input-proveedor" type="text" placeholder="Empresa proveedora" required>
-                    </div>
-                </div>
-                <div class="card-input">
-                    <label>Observaciones</label>
-                    <div class="input-box">
-                        <i class='bx bxs-notepad'></i>
-                        <input id="input-observaciones" type="text" placeholder="Detalles adicionales (opcional)">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Lista de ítems ── -->
-        <div class="section-card">
-            <div class="section-title">
-                <i class='bx bxs-package'></i> Insumos a Comprar
-            </div>
-
-            <div class="items-list" id="items-list">
-                <!-- Las filas se insertan aquí por JS -->
-            </div>
-
-            <button type="button" class="btn-add-item" onclick="addItem()">
-                <i class='bx bx-plus-circle'></i> Agregar insumo
-            </button>
-        </div>
-
-        <!-- ── Total en tiempo real ── -->
-        <div class="total-bar">
-            <span class="label">Total estimado (sin IVA)</span>
-            <span class="amount" id="total-display">$ 0,00</span>
-        </div>
-
-        <button type="button" class="btn-confirm" onclick="showPopup()">
-            Confirmar Compra
-            <i class='bx bx-check'></i>
-        </button>
-    </div>
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-title">Compra de Insumo</h1>
+    <p class="text-slate-500 dark:text-slate-400 mt-1">Registra la adquisición de múltiples artículos o suministros generales</p>
 </div>
 
-<!-- ── POPUP ── -->
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 p-6 rounded-3xl shadow-sm">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-5 flex items-center gap-1.5">
+            <i class='bx bxs-store text-sm'></i> Datos de la Compra
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Proveedor</label>
+                <div class="relative flex items-center">
+                    <span class="absolute left-4 text-slate-400 text-lg">
+                        <i class='bx bxs-store'></i>
+                    </span>
+                    <input id="input-proveedor" type="text" placeholder="Empresa proveedora" required
+                           class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 pl-11 pr-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Observaciones</label>
+                <div class="relative flex items-center">
+                    <span class="absolute left-4 text-slate-400 text-lg">
+                        <i class='bx bxs-notepad'></i>
+                    </span>
+                    <input id="input-observaciones" type="text" placeholder="Detalles adicionales (opcional)"
+                           class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 pl-11 pr-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 p-6 rounded-3xl shadow-sm">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-5 flex items-center gap-1.5">
+            <i class='bx bxs-package text-sm'></i> Insumos a Comprar
+        </h3>
+
+        <div id="items-list" class="flex flex-col gap-4 mb-6">
+        </div>
+
+        <button type="button" onclick="addItem()"
+                class="w-full py-3 border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 text-indigo-500 font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all">
+            <i class='bx bx-plus-circle text-base'></i>
+            Agregar insumo
+        </button>
+    </div>
+
+    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-650 dark:to-indigo-550 text-white rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-indigo-500/10 dark:shadow-indigo-950/20">
+        <span class="text-sm font-semibold opacity-90">Total estimado (sin IVA)</span>
+        <span id="total-display" class="text-2xl font-black font-title">$ 0,00</span>
+    </div>
+
+    <button type="button" onclick="showPopup()"
+            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-950/20 transition-all active:scale-[0.98]">
+        Confirmar Compra
+        <i class='bx bx-check text-base'></i>
+    </button>
+</div>
+
 <div id="success-popup" class="popup-overlay">
-    <div class="popup-content">
-        <div class="icon-checkmark">
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative">
+        <div class="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-3xl mx-auto mb-4 animate-[bounce_1s_infinite]">
             <i class='bx bx-check'></i>
         </div>
-        <h2>Compra Exitosa</h2>
-        <p>La orden ha sido registrada correctamente.</p>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-white font-title">Compra Exitosa</h2>
+        <p class="text-sm text-slate-400 dark:text-slate-500 mt-2 mb-6">La orden ha sido registrada correctamente.</p>
 
-        <a id="btn-view-insumo-order" href="#" class="btn-order"
-            style="text-decoration: none; display: inline-block; text-align: center;">Orden de compra</a>
-
-        <a href="{% url 'nueva_compra' %}" class="btn-back">
-            Volver
-            <i class='bx bx-undo'></i>
-        </a>
+        <div class="flex flex-col gap-2">
+            <a id="btn-view-insumo-order" href="#" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm text-decoration-none shadow-md shadow-indigo-500/10 flex items-center justify-center gap-1.5">
+                <i class='bx bx-file'></i> Ver Orden
+            </a>
+            <a href="{% url 'nueva_compra' %}" class="w-full py-2 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-850 text-slate-450 dark:text-slate-500 font-bold text-xs flex items-center justify-center gap-1 text-decoration-none">
+                <i class='bx bx-undo text-sm'></i> Volver
+            </a>
+        </div>
     </div>
 </div>
 
@@ -253,39 +132,49 @@
         const list = document.getElementById('items-list');
 
         const row = document.createElement('div');
-        row.className = 'item-row';
+        row.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 items-end bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 p-4 rounded-2xl animate-[slideIn_0.2s_ease-out] relative';
         row.id = `item-row-${idx}`;
         row.innerHTML = `
-            <div class="card-input">
-                <label>Insumo</label>
-                <div class="input-box">
-                    <i class='bx bxs-box'></i>
-                    <input type="text" placeholder="Ej: Toner Negro" class="item-insumo" value="${defaults.insumo || ''}" required>
+            <div class="flex flex-col gap-1.5 md:col-span-4">
+                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Insumo</label>
+                <div class="relative flex items-center">
+                    <span class="absolute left-3 text-slate-400 text-base">
+                        <i class='bx bxs-box'></i>
+                    </span>
+                    <input type="text" placeholder="Ej: Toner Negro" class="item-insumo w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-800 dark:text-white placeholder-slate-400 outline-none transition-all" value="${defaults.insumo || ''}" required>
                 </div>
             </div>
-            <div class="card-input">
-                <label>Marca</label>
-                <div class="input-box">
-                    <i class='bx bxs-tag'></i>
-                    <input type="text" placeholder="Ej: HP, Epson" class="item-marca" value="${defaults.marca || ''}">
+            
+            <div class="flex flex-col gap-1.5 md:col-span-3">
+                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Marca</label>
+                <div class="relative flex items-center">
+                    <span class="absolute left-3 text-slate-400 text-base">
+                        <i class='bx bxs-tag'></i>
+                    </span>
+                    <input type="text" placeholder="Ej: HP, Epson" class="item-marca w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-800 dark:text-white placeholder-slate-400 outline-none transition-all" value="${defaults.marca || ''}">
                 </div>
             </div>
-            <div class="card-input">
-                <label>Cant.</label>
-                <div class="input-box" style="padding-left: 12px;">
-                    <input type="number" placeholder="1" value="${defaults.cantidad || 1}" min="1" class="item-cantidad" oninput="recalcTotal()" style="padding-left: 4px;">
+            
+            <div class="flex flex-col gap-1.5 md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cantidad</label>
+                <input type="number" placeholder="1" value="${defaults.cantidad || 1}" min="1" class="item-cantidad w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 px-3 text-center text-xs text-slate-800 dark:text-white outline-none transition-all" oninput="recalcTotal()">
+            </div>
+            
+            <div class="flex flex-col gap-1.5 md:col-span-2">
+                <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Precio Unit.</label>
+                <div class="relative flex items-center">
+                    <span class="absolute left-3 text-slate-400 text-base">
+                        <i class='bx bxs-dollar-circle'></i>
+                    </span>
+                    <input type="number" placeholder="0.00" step="0.01" min="0" class="item-precio w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 pl-8 pr-3 text-xs text-slate-800 dark:text-white placeholder-slate-400 outline-none transition-all" value="${defaults.precio || ''}" oninput="recalcTotal()">
                 </div>
             </div>
-            <div class="card-input">
-                <label>Precio Unit.</label>
-                <div class="input-box">
-                    <i class='bx bxs-dollar-circle'></i>
-                    <input type="number" placeholder="0.00" step="0.01" min="0" class="item-precio" value="${defaults.precio || ''}" oninput="recalcTotal()">
-                </div>
+            
+            <div class="md:col-span-1 flex justify-center">
+                <button type="button" class="w-9 h-9 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center justify-center transition-colors" onclick="removeItem(${idx})" title="Eliminar ítem">
+                    <i class='bx bx-x text-xl'></i>
+                </button>
             </div>
-            <button type="button" class="btn-remove-item" onclick="removeItem(${idx})" title="Eliminar ítem">
-                <i class='bx bx-x'></i>
-            </button>
         `;
 
         list.appendChild(row);
@@ -293,7 +182,7 @@
     }
 
     function removeItem(idx) {
-        const rows = document.querySelectorAll('.item-row');
+        const rows = document.querySelectorAll('#items-list > div');
         if (rows.length <= 1) {
             alert('Debe haber al menos un insumo en la compra.');
             return;
@@ -301,7 +190,7 @@
         const row = document.getElementById(`item-row-${idx}`);
         if (row) {
             row.style.opacity = '0';
-            row.style.transform = 'translateY(-6px)';
+            row.style.transform = 'scale(0.95)';
             row.style.transition = 'all 0.15s ease';
             setTimeout(() => { row.remove(); recalcTotal(); }, 150);
         }
@@ -309,7 +198,7 @@
 
     function recalcTotal() {
         let total = 0;
-        document.querySelectorAll('.item-row').forEach(row => {
+        document.querySelectorAll('#items-list > div').forEach(row => {
             const cant = parseFloat(row.querySelector('.item-cantidad').value) || 0;
             const precio = parseFloat(row.querySelector('.item-precio').value) || 0;
             total += cant * precio;
@@ -319,7 +208,7 @@
 
     function getItems() {
         const items = [];
-        document.querySelectorAll('.item-row').forEach(row => {
+        document.querySelectorAll('#items-list > div').forEach(row => {
             items.push({
                 insumo: row.querySelector('.item-insumo').value.trim(),
                 marca: row.querySelector('.item-marca').value.trim(),
@@ -331,17 +220,15 @@
     }
 
     function showPopup() {
-        // ── Validar proveedor ──
         const proveedor = document.getElementById('input-proveedor').value.trim();
         if (!proveedor) {
             const box = document.getElementById('input-proveedor').parentElement;
-            box.style.boxShadow = '0 0 0 2px var(--red)';
+            box.style.boxShadow = '0 0 0 2px #f43f5e';
             setTimeout(() => { box.style.boxShadow = 'none'; }, 3000);
             alert('Por favor ingresá el proveedor.');
             return;
         }
 
-        // ── Validar ítems ──
         const items = getItems();
         if (items.length === 0) {
             alert('Agregá al menos un insumo.');
@@ -349,17 +236,17 @@
         }
 
         let hasError = false;
-        document.querySelectorAll('.item-row').forEach(row => {
+        document.querySelectorAll('#items-list > div').forEach(row => {
             const insumoInput = row.querySelector('.item-insumo');
             const precioInput = row.querySelector('.item-precio');
 
             if (!insumoInput.value.trim()) {
-                insumoInput.parentElement.style.boxShadow = '0 0 0 2px var(--red)';
+                insumoInput.parentElement.style.boxShadow = '0 0 0 2px #f43f5e';
                 setTimeout(() => { insumoInput.parentElement.style.boxShadow = 'none'; }, 3000);
                 hasError = true;
             }
             if (!precioInput.value || parseFloat(precioInput.value) <= 0) {
-                precioInput.parentElement.style.boxShadow = '0 0 0 2px var(--red)';
+                precioInput.parentElement.style.boxShadow = '0 0 0 2px #f43f5e';
                 setTimeout(() => { precioInput.parentElement.style.boxShadow = 'none'; }, 3000);
                 hasError = true;
             }
@@ -370,7 +257,6 @@
             return;
         }
 
-        // ── Enviar ──
         const data = {
             tipo: 'INSUMO',
             proveedor: proveedor,
@@ -392,9 +278,6 @@
                 const btn = document.getElementById('btn-view-insumo-order');
                 btn.href = `/orden-compra/${data.id}/`;
 
-                document.querySelector('.content-container').classList.add('blur-active');
-                document.querySelector('#sidebar').classList.add('blur-active');
-                document.querySelector('nav').classList.add('blur-active');
                 document.getElementById('success-popup').classList.add('active');
             } else {
                 alert('Error al guardar: ' + (data.message || 'Unknown'));
@@ -406,7 +289,6 @@
         });
     }
 
-    // Inicializar con un ítem vacío al cargar
     addItem();
 </script>
 {% endblock %}

@@ -5,60 +5,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema Compras</title>
-
+    <title>Login - Nextprint</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        :root {
+            --barney-start: #8e2de2;
+            --barney-stop: #4a00e0;
+            --barney-bg: #0a0616;
+            
+            --slate-start: #606c88;
+            --slate-stop: #3f4c6b;
+            --slate-bg: #0e1118;
+            
+            --candy-start: #009fff;
+            --candy-stop: #ec2f4b;
+            --candy-bg: #0a0e14;
+            
+            --firewatch-start: #ef473a;
+            --firewatch-stop: #cb2d3e;
+            --firewatch-bg: #140505;
+            
+            --citrus-start: #fdc012;
+            --citrus-stop: #f37335;
+            --citrus-bg: #120904;
+            
+            --marsh-start: #8dc26f;
+            --marsh-stop: #76b852;
+            --marsh-bg: #060e04;
+            
+            --frost-start: #004e92;
+            --frost-stop: #000d7a;
+            --frost-bg: #020212;
 
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+            --start: var(--barney-start);
+            --stop: var(--barney-stop);
+            --bg-color: var(--barney-bg);
+        }
+        body.barney { --start: var(--barney-start); --stop: var(--barney-stop); --bg-color: var(--barney-bg); }
+        body.slate { --start: var(--slate-start); --stop: var(--slate-stop); --bg-color: var(--slate-bg); }
+        body.candy { --start: var(--candy-start); --stop: var(--candy-stop); --bg-color: var(--candy-bg); }
+        body.firewatch { --start: var(--firewatch-start); --stop: var(--firewatch-stop); --bg-color: var(--firewatch-bg); }
+        body.citrus { --start: var(--citrus-start); --stop: var(--citrus-stop); --bg-color: var(--citrus-bg); }
+        body.marsh { --start: var(--marsh-start); --stop: var(--marsh-stop); --bg-color: var(--marsh-bg); }
+        body.frost { --start: var(--frost-start); --stop: var(--frost-stop); --bg-color: var(--frost-bg); }
+
+        body {
+            background-color: var(--bg-color);
+            transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-picker li {
+            @apply w-6 h-6 rounded-full cursor-pointer border border-white/20 transition-all duration-200 hover:scale-125 hover:border-white/50;
+        }
+        .theme-picker li.pressed {
+            @apply ring-4 ring-white/30 border-white scale-110;
+        }
+        .theme-picker .barney { background: linear-gradient(135deg, var(--barney-start), var(--barney-stop)); }
+        .theme-picker .slate { background: linear-gradient(135deg, var(--slate-start), var(--slate-stop)); }
+        .theme-picker .candy { background: linear-gradient(135deg, var(--candy-start), var(--candy-stop)); }
+        .theme-picker .firewatch { background: linear-gradient(135deg, var(--firewatch-start), var(--firewatch-stop)); }
+        .theme-picker .citrus { background: linear-gradient(135deg, var(--citrus-start), var(--citrus-stop)); }
+        .theme-picker .marsh { background: linear-gradient(135deg, var(--marsh-start), var(--marsh-stop)); }
+        .theme-picker .frost { background: linear-gradient(135deg, var(--frost-start), var(--frost-stop)); }
+
+        .form.rotate {
+            animation: rotateForm 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes rotateForm {
+            0% { transform: rotateY(0deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(0.9); opacity: 0.3; }
+            100% { transform: rotateY(360deg) scale(1); opacity: 1; }
+        }
+    </style>
 </head>
 
-<body>
+<body class="flex flex-col items-center justify-center min-h-screen text-slate-200 p-4 font-sans overflow-hidden">
+    
+    <!-- Background glowing shapes -->
+    <div class="absolute w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-[var(--start)] to-[var(--stop)] opacity-20 blur-[100px] -z-10 animate-pulse transition-all duration-500"></div>
+    <div class="absolute w-[300px] h-[300px] rounded-full bg-gradient-to-br from-[var(--stop)] to-[var(--start)] opacity-10 blur-[80px] -z-10 -bottom-10 -left-10 transition-all duration-500"></div>
 
-    <ul class="theme-picker">
-        <li data-theme="barney" class="barney"></li>
-        <li data-theme="firewatch" class="firewatch"></li>
-        <li data-theme="citrus" class="citrus"></li>
-        <li data-theme="marsh" class="marsh"></li>
-        <li data-theme="frost" class="frost"></li>
-        <li data-theme="slate" class="slate"></li>
-        <li data-theme="candy" class="candy"></li>
-    </ul>
+    <div class="w-full max-w-md">
+        <!-- Theme selection title -->
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest text-center mb-4">Elige un Tema</p>
+        
+        <!-- Theme Picker List -->
+        <ul class="theme-picker flex items-center justify-center gap-3 mb-8">
+            <li data-theme="barney" class="barney" title="Barney"></li>
+            <li data-theme="firewatch" class="firewatch" title="Firewatch"></li>
+            <li data-theme="citrus" class="citrus" title="Citrus"></li>
+            <li data-theme="marsh" class="marsh" title="Marsh"></li>
+            <li data-theme="frost" class="frost" title="Frost"></li>
+            <li data-theme="slate" class="slate" title="Slate"></li>
+            <li data-theme="candy" class="candy" title="Candy"></li>
+        </ul>
 
-    <form class="form" method="POST">
-        {% csrf_token %}
-        <h1>Bienvenido</h1>
-        <p>Ingresa tus credenciales.</p>
+        <!-- Login Card Form -->
+        <form class="form bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative transition-all duration-300" method="POST">
+            {% csrf_token %}
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-white bg-clip-text text-transparent mb-2">Bienvenido</h1>
+                <p class="text-sm text-slate-400">Ingresa tus credenciales para continuar</p>
+            </div>
 
-        <div class="input-wrapper">
-            <input type="text" name="username" placeholder="Usuario" required />
-            <i class="bx bxs-user-circle"></i>
-        </div>
+            <!-- Inputs -->
+            <div class="space-y-5">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-lg">
+                        <i class="bx bxs-user-circle"></i>
+                    </span>
+                    <input type="text" name="username" placeholder="Usuario" required 
+                           class="w-full bg-black/30 border border-white/10 hover:border-white/20 focus:border-[var(--start)] focus:ring-1 focus:ring-[var(--start)] rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all duration-200" />
+                </div>
 
-        <div class="input-wrapper">
-            <input type="password" name="password" placeholder="Contraseña" required />
-            <i class="bx bx-key"></i>
-        </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-lg">
+                        <i class="bx bx-key"></i>
+                    </span>
+                    <input type="password" name="password" placeholder="Contraseña" required 
+                           class="w-full bg-black/30 border border-white/10 hover:border-white/20 focus:border-[var(--start)] focus:ring-1 focus:ring-[var(--start)] rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all duration-200" />
+                </div>
+            </div>
 
-        <div class="button-wrapper">
-            <div class="remember-wrapper">
-                <label class="remember-label" for="remember_me">
-                    <input type="checkbox" id="remember_me" name="remember_me">
-                    <span class="remember-custom"></span>
+            <!-- Remember me and Submit -->
+            <div class="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
+                    <input type="checkbox" id="remember_me" name="remember_me" class="rounded border-white/10 bg-black/40 text-indigo-600 focus:ring-0 focus:ring-offset-0">
                     Recordar mi cuenta
                 </label>
-            </div>
-            <button type="submit">
-                Ingresar
-                <i class="bx bx-right-arrow-alt"></i>
-            </button>
-        </div>
 
-        {% if error %}
-        <p style="color: white; background: rgba(200,0,0,0.5); padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-size: 14px;">
-            {{ error }}
-        </p>
-        {% endif %}
-    </form>
+                <button type="submit" 
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-[var(--start)] to-[var(--stop)] hover:opacity-90 active:scale-95 text-white font-semibold text-sm rounded-2xl py-3 px-6 shadow-lg shadow-indigo-950/20 transition-all duration-150">
+                    Ingresar
+                    <i class="bx bx-right-arrow-alt text-lg"></i>
+                </button>
+            </div>
+
+            {% if error %}
+            <div class="mt-6 p-3 bg-rose-500/20 border border-rose-500/30 rounded-xl text-center">
+                <p class="text-xs text-rose-300 font-medium">{{ error }}</p>
+            </div>
+            {% endif %}
+        </form>
+    </div>
 
     <script src="{% static 'js/login.js' %}"></script>
 </body>

@@ -2,26 +2,35 @@
 {% load static %}
 
 {% block content %}
-<div class="head-title">
-    <div class="left">
-        <h1>Nueva Compra</h1>
-    </div>
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-title">Nueva Compra</h1>
+    <p class="text-slate-500 dark:text-slate-400 mt-1">Selecciona la categoría del pedido que deseas realizar</p>
 </div>
 
-<div class="selection-container">
-    <h2>¿Qué deseas comprar?</h2>
+<div class="flex flex-col items-center justify-center py-8">
+    <h2 class="text-xl font-bold text-slate-700 dark:text-slate-300 mb-8 font-title">¿Qué deseas comprar hoy?</h2>
 
-    <div class="options-wrapper">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl px-4">
         <!-- Opción Papel -->
-        <a href="{% url 'compra_papel' %}" style="text-decoration: none;">
-            <div class="selection-card paper-card">
-                <i class='bx bxs-file-blank'></i>
-                <h3>Papel</h3>
+        <a href="{% url 'compra_papel' %}" class="group block text-decoration-none">
+            <div class="h-64 flex flex-col items-center justify-center p-8 bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-md hover:shadow-indigo-500/10 group-hover:border-indigo-500/40 transition-all duration-300 transform group-hover:-translate-y-2 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-3xl mb-5 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 shadow-inner">
+                    <i class='bx bxs-file-blank'></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-500 transition-colors font-title">Papel</h3>
+                <p class="text-sm text-slate-400 mt-2">Resmas de papel de formato, gramaje y tipo personalizado con cotización de proveedores en tiempo real</p>
             </div>
         </a>
-        <a href="{% url 'compra_insumo' %}" class="selection-card insumo-card">
-            <i class='bx bxs-cart-alt'></i>
-            <h3>Insumo</h3>
+
+        <!-- Opción Insumo -->
+        <a href="{% url 'compra_insumo' %}" class="group block text-decoration-none">
+            <div class="h-64 flex flex-col items-center justify-center p-8 bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-md hover:shadow-emerald-500/10 group-hover:border-emerald-500/40 transition-all duration-300 transform group-hover:-translate-y-2 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 dark:text-emerald-400 flex items-center justify-center text-3xl mb-5 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 shadow-inner">
+                    <i class='bx bxs-cart-alt'></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-500 transition-colors font-title">Insumos</h3>
+                <p class="text-sm text-slate-400 mt-2">Materiales generales de oficina, repuestos, toners, tintas y artículos multi-ítem para stock</p>
+            </div>
         </a>
     </div>
 </div>

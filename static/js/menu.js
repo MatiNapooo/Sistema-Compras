@@ -16,18 +16,22 @@ const menuBar = document.querySelector('#content nav .bx.bx-menu');
 const sidebar = document.getElementById('sidebar');
 
 // Sidebar toggle işlemi
-menuBar.addEventListener('click', function () {
-    sidebar.classList.toggle('hide');
-});
+if (menuBar && sidebar) {
+    menuBar.addEventListener('click', function () {
+        sidebar.classList.toggle('hide');
+    });
+}
 
 // Sayfa yüklendiğinde ve boyut değişimlerinde sidebar durumunu ayarlama
 function adjustSidebar() {
-    if (window.innerWidth <= 576) {
-        sidebar.classList.add('hide');  // 576px ve altı için sidebar gizli
-        sidebar.classList.remove('show');
-    } else {
-        sidebar.classList.remove('hide');  // 576px'den büyükse sidebar görünür
-        sidebar.classList.add('show');
+    if (sidebar) {
+        if (window.innerWidth <= 576) {
+            sidebar.classList.add('hide');  // 576px ve altı için sidebar gizli
+            sidebar.classList.remove('show');
+        } else {
+            sidebar.classList.remove('hide');  // 576px'den büyükse sidebar görünür
+            sidebar.classList.add('show');
+        }
     }
 }
 
@@ -40,56 +44,53 @@ const searchButton = document.querySelector('#content nav form .form-input butto
 const searchButtonIcon = document.querySelector('#content nav form .form-input button .bx');
 const searchForm = document.querySelector('#content nav form');
 
-searchButton.addEventListener('click', function (e) {
-    if (window.innerWidth < 768) {
-        e.preventDefault();
-        searchForm.classList.toggle('show');
-        if (searchForm.classList.contains('show')) {
-            searchButtonIcon.classList.replace('bx-search', 'bx-x');
-        } else {
-            searchButtonIcon.classList.replace('bx-x', 'bx-search');
+if (searchButton && searchButtonIcon && searchForm) {
+    searchButton.addEventListener('click', function (e) {
+        if (window.innerWidth < 768) {
+            e.preventDefault();
+            searchForm.classList.toggle('show');
+            if (searchForm.classList.contains('show')) {
+                searchButtonIcon.classList.replace('bx-search', 'bx-x');
+            } else {
+                searchButtonIcon.classList.replace('bx-x', 'bx-search');
+            }
         }
-    }
-})
-
-// Dark Mode Switch
-const switchMode = document.getElementById('switch-mode');
-
-// Check localStorage on load
-if (localStorage.getItem('darkMode') === 'enabled') {
-    document.body.classList.add('dark');
-    switchMode.checked = true;
+    })
 }
 
-switchMode.addEventListener('change', function () {
-    if (this.checked) {
-        document.body.classList.add('dark');
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('darkMode', 'enabled');
-    } else {
-        document.body.classList.remove('dark');
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('darkMode', 'disabled');
-    }
-})
+// Dark mode configuration is handled inline in base.html to prevent flash and avoid script caching issues.
 
 // Notification Menu Toggle
-document.querySelector('.notification').addEventListener('click', function () {
-    document.querySelector('.notification-menu').classList.toggle('show');
-    document.querySelector('.profile-menu').classList.remove('show'); // Close profile menu if open
-});
+const notificationBtn = document.querySelector('.notification');
+const notificationMenu = document.querySelector('.notification-menu');
+const profileMenu = document.querySelector('.profile-menu');
+
+if (notificationBtn && notificationMenu) {
+    notificationBtn.addEventListener('click', function () {
+        notificationMenu.classList.toggle('show');
+        if (profileMenu) {
+            profileMenu.classList.remove('show'); // Close profile menu if open
+        }
+    });
+}
 
 // Profile Menu Toggle
-document.querySelector('.profile').addEventListener('click', function () {
-    document.querySelector('.profile-menu').classList.toggle('show');
-    document.querySelector('.notification-menu').classList.remove('show'); // Close notification menu if open
-});
+const profileBtn = document.querySelector('.profile');
+
+if (profileBtn && profileMenu) {
+    profileBtn.addEventListener('click', function () {
+        profileMenu.classList.toggle('show');
+        if (notificationMenu) {
+            notificationMenu.classList.remove('show'); // Close notification menu if open
+        }
+    });
+}
 
 // Close menus if clicked outside
 window.addEventListener('click', function (e) {
-    if (!e.target.closest('.notification') && !e.target.closest('.profile')) {
-        document.querySelector('.notification-menu').classList.remove('show');
-        document.querySelector('.profile-menu').classList.remove('show');
+    if ((!profileBtn || !e.target.closest('.profile')) && (!notificationBtn || !e.target.closest('.notification'))) {
+        if (notificationMenu) notificationMenu.classList.remove('show');
+        if (profileMenu) profileMenu.classList.remove('show');
     }
 });
 
@@ -98,18 +99,20 @@ function toggleMenu(menuId) {
     var menu = document.getElementById(menuId);
     var allMenus = document.querySelectorAll('.menu');
 
-    // Diğer tüm menüleri kapat
-    allMenus.forEach(function (m) {
-        if (m !== menu) {
-            m.style.display = 'none';
-        }
-    });
+    if (menu) {
+        // Diğer tüm menüleri kapat
+        allMenus.forEach(function (m) {
+            if (m !== menu) {
+                m.style.display = 'none';
+            }
+        });
 
-    // Tıklanan menü varsa aç, yoksa kapat
-    if (menu.style.display === 'none' || menu.style.display === '') {
-        menu.style.display = 'block';
-    } else {
-        menu.style.display = 'none';
+        // Tıklanan menü varsa aç, yoksa kapat
+        if (menu.style.display === 'none' || menu.style.display === '') {
+            menu.style.display = 'block';
+        } else {
+            menu.style.display = 'none';
+        }
     }
 }
 

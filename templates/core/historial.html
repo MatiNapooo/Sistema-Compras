@@ -4,134 +4,160 @@
 {% block content %}
 <!-- FLATPICKR CSS (Date Picker) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<!-- Custom Theme for Flatpickr (Optional, darker) -->
-<!-- Custom Theme for Flatpickr -->
 <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
 
-<div class="content-container">
-    <div class="head-title">
-        <div class="left">
-            <h1>Historial de Compras</h1>
-        </div>
-    </div>
+<style>
+    /* Custom Flatpickr Overrides to match theme */
+    .flatpickr-calendar {
+        @apply !bg-white dark:!bg-[#0c0f17] !border !border-slate-200 dark:!border-slate-850 !shadow-2xl !rounded-2xl !font-sans;
+    }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+        @apply !bg-indigo-600 !border-indigo-600 !text-white;
+    }
+    .flatpickr-day.inRange {
+        @apply !bg-indigo-50 dark:!bg-indigo-950/40 !border-transparent !text-indigo-600 dark:!text-indigo-400;
+    }
+    .flatpickr-day:hover {
+        @apply !bg-slate-100 dark:!bg-slate-900;
+    }
+    .flatpickr-months .flatpickr-month {
+        @apply !text-slate-800 dark:!text-slate-100;
+    }
+    .flatpickr-current-month .numInputWrapper span.arrowUp::after { border-bottom-color: #6366f1; }
+    .flatpickr-current-month .numInputWrapper span.arrowDown::after { border-top-color: #6366f1; }
+</style>
 
-    <!-- SEARCH SECTION (Glassmorphism Cards) -->
-    <form method="GET" action="{% url 'historial' %}" class="history-search-form" id="searchForm">
-        <div class="search-grid">
-
-            <!-- 1. PRODUCTO -->
-            <div class="search-card">
-                <div class="card-icon">
-                    <i class='bx bx-search-alt'></i>
-                </div>
-                <div class="card-content">
-                    <label>¿Qué buscamos?</label>
-                    <input type="text" name="q" placeholder="Ej: Papel Ilustrativo..." value="{{ query }}">
-                </div>
-            </div>
-
-            <!-- 2. PROVEEDOR -->
-            <div class="search-card">
-                <div class="card-icon">
-                    <i class='bx bxs-store'></i>
-                </div>
-                <div class="card-content">
-                    <label>Proveedor</label>
-                    <input type="text" name="provider" placeholder="Ej: Dimagraf..." value="{{ provider }}">
-                </div>
-            </div>
-
-            <!-- 3. FECHA (DATE RANGE PICKER) -->
-            <div class="search-card date-card">
-                <div class="card-icon">
-                    <i class='bx bx-calendar'></i>
-                </div>
-                <div class="card-content">
-                    <label>Rango de Fechas</label>
-                    <input type="text" id="dateRangeInput" name="date_range" placeholder="Seleccionar fechas..."
-                        value="{{ date_range }}" readonly>
-                </div>
-            </div>
-
-            <!-- BUTTON -->
-            <button type="submit" class="btn-search-viz">
-                <i class='bx bx-filter-alt'></i> Buscar
-            </button>
-        </div>
-    </form>
-
-    <!-- RESULTS TABLE -->
-    {% if results %}
-    <div class="table-data fade-in-up">
-        <div class="order">
-            <div class="head">
-                <h3>Resultados ({{ results|length }})</h3>
-                <h3 style="color: var(--blue); font-size: 1.2rem;">TOTAL: $ {{ total_sum|floatformat:2 }}</h3>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Usuario</th>
-                        <th>Papel / Insumo</th>
-                        <th>Proveedor</th>
-                        <th>Detalles</th>
-                        <th>Precio</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for orden in results %}
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                {% if orden.usuario.profile.image %}
-                                <img src="{{ orden.usuario.profile.image.url }}" alt="User"
-                                    style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
-                                {% else %}
-                                <img src="https://ui-avatars.com/api/?name={{ orden.usuario.username }}&background=random"
-                                    style="width: 35px; height: 35px; border-radius: 50%;">
-                                {% endif %}
-                                <span style="font-weight: 600;">{{ orden.usuario.username|title }}</span>
-                            </div>
-                        </td>
-                        <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                        <td>{{ orden.insumo }}</td>
-                        <td>{{ orden.proveedor }}</td>
-                        <td>{{ orden.observaciones|default:"-" }}</td>
-                        <td style="font-weight: bold; color: var(--dark);">$ {{ orden.precio|floatformat:2 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 20px;">No hay compras registradas aún.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% elif query or provider or date_range %}
-    <div class="no-results fade-in-up">
-        <i class='bx bx-search-x'></i>
-        <p>No se encontraron resultados con estos filtros.</p>
-    </div>
-    {% else %}
-    <!-- EMPTY STATE -->
-    <div class="empty-state fade-in-up">
-        <i class='bx bx-time-five'></i>
-        <h3>Historial de Compras</h3>
-        <p>Selecciona un rango de fechas y filtros para consultar órdenes pasadas.</p>
-    </div>
-    {% endif %}
-
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-title">Historial de Compras</h1>
+    <p class="text-slate-500 dark:text-slate-400 mt-1">Busca y filtra comprobantes de pedidos anteriores</p>
 </div>
+
+<!-- SEARCH SECTION (Cohesive grid form) -->
+<form method="GET" action="{% url 'historial' %}" class="mb-8" id="searchForm">
+    <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 p-6 rounded-3xl shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+        
+        <!-- 1. PRODUCTO -->
+        <div class="flex flex-col gap-2">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <i class='bx bx-search-alt text-sm'></i> ¿Qué buscamos?
+            </label>
+            <input type="text" name="q" placeholder="Ej: Papel Ilustrativo..." value="{{ query }}"
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+        </div>
+
+        <!-- 2. PROVEEDOR -->
+        <div class="flex flex-col gap-2">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <i class='bx bxs-store text-sm'></i> Proveedor
+            </label>
+            <input type="text" name="provider" placeholder="Ej: Dimagraf..." value="{{ provider }}"
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
+        </div>
+
+        <!-- 3. FECHA (DATE RANGE PICKER) -->
+        <div class="flex flex-col gap-2">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <i class='bx bx-calendar text-sm'></i> Rango de Fechas
+            </label>
+            <input type="text" id="dateRangeInput" name="date_range" placeholder="Seleccionar fechas..." value="{{ date_range }}" readonly
+                   class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2.5 px-4 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all cursor-pointer">
+        </div>
+
+        <!-- BUTTON -->
+        <button type="submit" class="w-full py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-950/20 active:scale-[0.98] transition-all duration-150">
+            <i class='bx bx-filter-alt'></i> Buscar
+        </button>
+    </div>
+</form>
+
+<!-- RESULTS TABLE -->
+{% if results %}
+<div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-sm overflow-hidden animate-[fadeInUp_0.4s_ease-out_forwards]">
+    <div class="p-6 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Resultados ({{ results|length }})</h3>
+        <div class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+            TOTAL: $ {{ total_sum|floatformat:2 }}
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-slate-200/50 dark:border-slate-800/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <th class="py-4 px-6">Usuario</th>
+                    <th class="py-4 px-6">Fecha</th>
+                    <th class="py-4 px-6">Papel / Insumo</th>
+                    <th class="py-4 px-6">Proveedor</th>
+                    <th class="py-4 px-6">Detalles / Obs.</th>
+                    <th class="py-4 px-6 text-right">Precio Neto</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
+                {% for orden in results %}
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
+                                {% if orden.usuario.profile.image %}
+                                <img src="{{ orden.usuario.profile.photo_url }}" alt="User" class="w-full h-full object-cover">
+                                {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ orden.usuario.username }}&background=6366f1&color=fff" class="w-full h-full object-cover">
+                                {% endif %}
+                            </div>
+                            <span class="font-bold text-slate-700 dark:text-slate-300">{{ orden.usuario.username|title }}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.fecha|date:"d/m/Y" }}</td>
+                    <td class="py-4 px-6 font-semibold text-slate-700 dark:text-slate-300">
+                        {% if orden.items.exists %}
+                            <div class="flex flex-col gap-1">
+                            {% for item in orden.items.all %}
+                                <span class="text-xs text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                    {{ item.insumo }}{% if item.marca %} <span class="text-slate-400 dark:text-slate-500">({{ item.marca }})</span>{% endif %}
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400">x{{ item.cantidad }}</span>
+                                </span>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">{{ orden.insumo|default:"-" }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.proveedor }}</td>
+                    <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium max-w-xs truncate" title="{{ orden.observaciones }}">{{ orden.observaciones|default:"-" }}</td>
+                    <td class="py-4 px-6 text-right font-black text-slate-800 dark:text-white font-title">$ {{ orden.precio_total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif query or provider or date_range %}
+<!-- NO RESULTS -->
+<div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-12 text-center max-w-xl mx-auto shadow-sm animate-[fadeInUp_0.4s_ease-out_forwards]">
+    <div class="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/20 text-rose-500 dark:text-rose-400 flex items-center justify-center text-3xl mx-auto mb-4">
+        <i class='bx bx-search-x'></i>
+    </div>
+    <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Sin resultados</h3>
+    <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">No encontramos órdenes que coincidan con los filtros ingresados. Intenta cambiar los términos de búsqueda.</p>
+</div>
+{% else %}
+<!-- EMPTY STATE (FIRST TIME LOAD) -->
+<div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-12 text-center max-w-xl mx-auto shadow-sm animate-[fadeInUp_0.4s_ease-out_forwards]">
+    <div class="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 dark:text-indigo-400 flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
+        <i class='bx bx-time-five'></i>
+    </div>
+    <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Historial de Compras</h3>
+    <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Ingresa algún criterio de búsqueda o rango de fechas arriba para listar y analizar órdenes anteriores.</p>
+</div>
+{% endif %}
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script> <!-- Spanish Locale -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Flatpickr with nice animation
         flatpickr("#dateRangeInput", {
             mode: "range",
             dateFormat: "Y-m-d",
@@ -155,214 +181,4 @@
         });
     });
 </script>
-
-<style>
-    /* LOCAL STYLES */
-    .history-search-form {
-        margin-bottom: 30px;
-    }
-
-    .search-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1.2fr auto;
-        gap: 20px;
-        align-items: stretch;
-    }
-
-    /* GLASS CARDS */
-    .search-card {
-        background: var(--light);
-        border-radius: 20px;
-        padding: 15px 20px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border: 1px solid transparent;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .search-card:focus-within {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
-        border-color: var(--blue);
-    }
-
-    .search-card::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 4px;
-        background: var(--grey);
-        transition: 0.3s;
-    }
-
-    .search-card:focus-within::after {
-        background: var(--blue);
-    }
-
-    .card-icon {
-        width: 45px;
-        height: 45px;
-        background: var(--light-blue);
-        color: var(--blue);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-    }
-
-    .card-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-content label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--dark-grey);
-        font-weight: 700;
-        margin-bottom: 2px;
-    }
-
-    .card-content input {
-        border: none;
-        background: transparent;
-        font-size: 15px;
-        color: var(--dark);
-        outline: none;
-        width: 100%;
-        font-family: 'Poppins', sans-serif;
-    }
-
-    .date-card .card-icon {
-        background: var(--light-orange);
-        color: var(--orange);
-    }
-
-    .date-card:focus-within::after {
-        background: var(--orange);
-    }
-
-    .btn-search-viz {
-        background: var(--blue);
-        color: white;
-        border: none;
-        border-radius: 15px;
-        padding: 0 30px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: 0.3s;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        height: 100%;
-    }
-
-    .btn-search-viz:hover {
-        background: var(--dark-blue, #0C4DA2);
-        transform: scale(1.02);
-    }
-
-    .user-avatar-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--blue), var(--light-blue));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .no-results,
-    .empty-state {
-        text-align: center;
-        padding: 50px 20px;
-        color: var(--dark-grey);
-    }
-
-    .no-results i,
-    .empty-state i {
-        font-size: 60px;
-        color: var(--grey);
-        margin-bottom: 15px;
-        display: block;
-    }
-
-    .fade-in-up {
-        animation: fadeInUp 0.5s ease-out forwards;
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    @keyframes fadeInUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* FLATPICKR THEME */
-    .flatpickr-calendar {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 20px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-        font-family: 'Poppins', sans-serif;
-    }
-
-    .flatpickr-month {
-        background: transparent;
-        color: var(--dark);
-        fill: var(--dark);
-        height: 50px;
-    }
-
-    .flatpickr-current-month span.cur-month {
-        font-weight: 700;
-        color: var(--blue);
-    }
-
-    .flatpickr-day.selected,
-    .flatpickr-day.startRange,
-    .flatpickr-day.endRange,
-    .flatpickr-day:hover {
-        background: var(--blue);
-        border-color: var(--blue);
-    }
-
-    .flatpickr-day.inRange {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: transparent;
-        color: var(--blue);
-    }
-
-    @media (max-width: 900px) {
-        .search-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
-    @media (max-width: 600px) {
-        .search-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .btn-search-viz {
-            height: 50px;
-        }
-    }
-</style>
 {% endblock %}

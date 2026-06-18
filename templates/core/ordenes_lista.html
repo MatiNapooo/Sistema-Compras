@@ -2,154 +2,142 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/cosmic-toggle.css' %}">
-<link rel="stylesheet" href="{% static 'css/orders-transition.css' %}">
+<style>
+    /* Absolute positioning and transitions for smooth switching between tables */
+    .orders-container {
+        position: relative;
+        transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .orders-table-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+        transform: translateY(10px);
+    }
+    .orders-table-wrapper.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        position: relative;
+    }
+    .orders-table-wrapper.inactive {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        position: absolute;
+    }
 
-<div class="head-title">
-    <div class="left">
-        <h1>Ordenes de Compra</h1>
+    /* Tab switcher css magic */
+    #tableToggle:checked ~ label #toggle-slider {
+        transform: translateX(100%);
+    }
+    #tableToggle:checked ~ label #label-papel {
+        color: #94a3b8; /* text-slate-400 */
+    }
+    #tableToggle:checked ~ label #label-insumos {
+        color: #6366f1; /* text-indigo-500/brand */
+    }
+</style>
 
+<div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white font-title">Órdenes de Compra</h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">Historial de pedidos realizados por tipo de compra</p>
     </div>
 
-    <!-- Cosmic Toggle for Switching Tables -->
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <label class="cosmic-toggle" style="transform: scale(0.7);">
-            <input class="toggle" type="checkbox" id="tableToggle">
-            <div class="slider">
-                <div class="cosmos"></div>
-                <div class="energy-line"></div>
-                <div class="energy-line"></div>
-                <div class="energy-line"></div>
-                <div class="toggle-orb">
-                    <div class="inner-orb"></div>
-                    <div class="ring"></div>
-                </div>
-                <div class="particles">
-                    <div style="--angle: 30deg" class="particle"></div>
-                    <div style="--angle: 60deg" class="particle"></div>
-                    <div style="--angle: 90deg" class="particle"></div>
-                    <div style="--angle: 120deg" class="particle"></div>
-                    <div style="--angle: 150deg" class="particle"></div>
-                    <div style="--angle: 180deg" class="particle"></div>
-                </div>
-            </div>
+    <!-- Toggle switcher -->
+    <div class="flex items-center bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 p-1.5 rounded-2xl relative select-none shadow-sm">
+        <input type="checkbox" id="tableToggle" class="sr-only">
+        <label for="tableToggle" class="cursor-pointer flex items-center relative z-10 w-56 h-8">
+            <div class="w-1/2 text-center text-xs font-bold transition-colors duration-200 text-indigo-500 font-title" id="label-papel">PAPEL</div>
+            <div class="w-1/2 text-center text-xs font-bold transition-colors duration-200 text-slate-400 dark:text-slate-500 font-title" id="label-insumos">INSUMOS</div>
+            
+            <!-- Slider block -->
+            <div class="absolute top-0 bottom-0 left-0 w-1/2 bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/60 rounded-xl -z-10 transition-all duration-300 transform" id="toggle-slider"></div>
         </label>
     </div>
 </div>
 
-<div class="orders-container" style="margin-top: 20px;">
+<div class="orders-container">
 
     <!-- Table 1: Insumos (Default Hidden) -->
-    <div class="orders-table-wrapper" id="insumosTable">
-        <div class="table-data">
-            <div class="order">
-                <div class="head">
-                    <h3>Insumos</h3>
-                    <div class="search-box">
-                        <input type="text" id="insumoSearch" placeholder="Buscar insumo..."
-                            onkeyup="filterTable('insumosTableData', 'insumoSearch')">
-                        <i class='bx bx-search' onclick="toggleSearch('insumoSearch')"></i>
-                    </div>
+    <div class="orders-table-wrapper inactive" id="insumosTable">
+        <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Insumos</h3>
+                
+                <!-- Search box -->
+                <div class="relative w-full sm:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class='bx bx-search text-lg'></i>
+                    </span>
+                    <input type="text" id="insumoSearch" placeholder="Buscar insumo..." onkeyup="filterTable('insumosTableData', 'insumoSearch')"
+                           class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 pl-9 pr-4 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
                 </div>
-                <style>
-                    /* Compact table styles */
-                    .orders-table-wrapper table td,
-                    .orders-table-wrapper table th {
-                        padding: 6px 10px !important;
-                        /* Reduced padding */
-                        font-size: 13px !important;
-                        /* Slightly smaller font */
-                    }
+            </div>
 
-                    .orders-table-wrapper table img {
-                        width: 28px !important;
-                        /* Smaller user image */
-                        height: 28px !important;
-                    }
-
-                    .orders-table-wrapper .status {
-                        padding: 6px 12px !important;
-                        /* Smaller buttons */
-                        font-size: 12px !important;
-                    }
-
-                    /* Search Box Styles */
-                    .search-box {
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        background: var(--light);
-                        border-radius: 20px;
-                        padding: 0 10px;
-                    }
-
-                    .search-box input {
-                        border: none;
-                        background: transparent;
-                        outline: none;
-                        width: 0;
-                        transition: width 0.3s ease;
-                        padding: 5px 0;
-                        font-size: 14px;
-                    }
-
-                    .search-box input.active {
-                        width: 150px;
-                        border-bottom: 1px solid var(--grey);
-                    }
-
-                    .search-box i {
-                        cursor: pointer;
-                        font-size: 20px;
-                    }
-                </style>
-                <table id="insumosTableData">
+            <div class="overflow-x-auto">
+                <table id="insumosTableData" class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Insumo</th>
-                            <th>Proveedor</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
-                            <th>Estado</th>
+                        <tr class="border-b border-slate-200/50 dark:border-slate-800/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <th class="py-4 px-6">Usuario</th>
+                            <th class="py-4 px-6">Insumos</th>
+                            <th class="py-4 px-6">Proveedor</th>
+                            <th class="py-4 px-6">Fecha</th>
+                            <th class="py-4 px-6">Acciones</th>
+                            <th class="py-4 px-6 text-center w-24">Estado</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
                         {% for orden in insumos %}
-                        <tr>
-                            <td>
-                                <img src="{{ orden.usuario.profile.photo_url }}" alt="User">
-                                <p>{{ orden.pedido_por }}</p>
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
+                                        <img src="{{ orden.usuario.profile.photo_url }}" alt="User" class="w-full h-full object-cover">
+                                    </div>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ orden.pedido_por }}</span>
+                                </div>
                             </td>
-                            <td class="search-target">
+                            <td class="py-4 px-6 search-target">
                                 {% if orden.items.exists %}
+                                    <div class="flex flex-col gap-1">
                                     {% for item in orden.items.all %}
-                                        <span style="display:block; font-size:12px; line-height:1.5;">• {{ item.insumo }}{% if item.marca %} <span style="color:#999;">({{ item.marca }})</span>{% endif %} x{{ item.cantidad }}</span>
+                                        <span class="text-xs text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                            {{ item.insumo }}{% if item.marca %} <span class="text-slate-400 dark:text-slate-500">({{ item.marca }})</span>{% endif %}
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400">x{{ item.cantidad }}</span>
+                                        </span>
                                     {% endfor %}
+                                    </div>
                                 {% else %}
-                                    {{ orden.insumo|default:"-" }}
+                                    <span class="text-xs text-slate-600 dark:text-slate-400 font-medium">{{ orden.insumo|default:"-" }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ orden.proveedor|default:"-" }}</td>
-                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                            <td style="display: flex; gap: 10px; align-items: center;">
-                                <a href="{% url 'orden_compra' orden.id %}" class="status completed"
-                                    style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                    <i class='bx bxs-file-find'></i> Ver
-                                </a>
-                                <button onclick="deleteOrder({{ orden.id }})" class="status pending"
-                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
-                                    <i class='bx bxs-trash'></i>
-                                </button>
-
+                            <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.proveedor|default:"-" }}</td>
+                            <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.fecha|date:"d/m/Y" }}</td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'orden_compra' orden.id %}" 
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors text-decoration-none">
+                                        <i class='bx bxs-file-find text-sm'></i> Ver
+                                    </a>
+                                    <button onclick="deleteOrder({{ orden.id }})" 
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
+                                        <i class='bx bxs-trash text-lg'></i>
+                                    </button>
+                                </div>
                             </td>
-                            <td>
-                                <!-- Payment Button -->
-                                <button onclick="togglePayment(this, {{ orden.id }})" class="status"
-                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 80px; background-color: var(--green); color: white;"
-                                    title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
+                            <td class="py-4 px-6 text-center">
+                                <button onclick="togglePayment(this, {{ orden.id }})" 
+                                        class="w-full max-w-[90px] mx-auto py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 bg-emerald-500 text-white shadow-sm shadow-emerald-500/10 hover:opacity-90"
+                                        title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
                                     {% if orden.pagado %}
-                                    <i class='bx bx-check'></i>
+                                    <i class='bx bx-check text-base'></i>
                                     {% else %}
                                     Pagado
                                     {% endif %}
@@ -158,7 +146,9 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6">No hay ordenes de insumos registradas.</td>
+                            <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500 font-medium">
+                                No hay órdenes de insumos registradas.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -169,55 +159,66 @@
 
     <!-- Table 2: Papel (Default Visible) -->
     <div class="orders-table-wrapper active" id="papelesTable">
-        <div class="table-data" style="background: rgba(60, 145, 230, 0.05);"> <!-- Slight tint for paper -->
-            <div class="order">
-                <div class="head">
-                    <h3>Papel</h3>
-                    <div class="search-box">
-                        <input type="text" id="papelSearch" placeholder="Buscar papel..."
-                            onkeyup="filterTable('papelesTableData', 'papelSearch')">
-                        <i class='bx bx-search' onclick="toggleSearch('papelSearch')"></i>
-                    </div>
+        <div class="bg-white dark:bg-[#0c0f17] border border-slate-200 dark:border-slate-800/80 rounded-3xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200/50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white font-title">Papel</h3>
+                
+                <!-- Search box -->
+                <div class="relative w-full sm:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class='bx bx-search text-lg'></i>
+                    </span>
+                    <input type="text" id="papelSearch" placeholder="Buscar papel..." onkeyup="filterTable('papelesTableData', 'papelSearch')"
+                           class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-2 pl-9 pr-4 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all">
                 </div>
-                <table id="papelesTableData">
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="papelesTableData" class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Papel</th>
-                            <th>Proveedor</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
-                            <th>Estado</th>
+                        <tr class="border-b border-slate-200/50 dark:border-slate-800/50 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <th class="py-4 px-6">Usuario</th>
+                            <th class="py-4 px-6">Papel</th>
+                            <th class="py-4 px-6">Proveedor</th>
+                            <th class="py-4 px-6">Fecha</th>
+                            <th class="py-4 px-6">Acciones</th>
+                            <th class="py-4 px-6 text-center w-24">Estado</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
                         {% for orden in papeles %}
-                        <tr>
-                            <td>
-                                <img src="{{ orden.usuario.profile.photo_url }}" alt="User">
-                                <p>{{ orden.pedido_por }}</p>
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800">
+                                        <img src="{{ orden.usuario.profile.photo_url }}" alt="User" class="w-full h-full object-cover">
+                                    </div>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ orden.pedido_por }}</span>
+                                </div>
                             </td>
-                            <td class="search-target">{{ orden.insumo|default:"-" }}</td>
-                            <td>{{ orden.proveedor|default:"-" }}</td>
-                            <td>{{ orden.fecha|date:"d/m/Y" }}</td>
-                            <td style="display: flex; gap: 10px; align-items: center;">
-                                <a href="{% url 'orden_compra' orden.id %}" class="status completed"
-                                    style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                    <i class='bx bxs-file-find'></i> Ver
-                                </a>
-                                <button onclick="deleteOrder({{ orden.id }})" class="status pending"
-                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center;">
-                                    <i class='bx bxs-trash'></i>
-                                </button>
-
+                            <td class="py-4 px-6 search-target text-slate-700 dark:text-slate-300 font-medium">
+                                {{ orden.insumo|default:"-" }}
                             </td>
-                            <td>
-                                <!-- Payment Button -->
-                                <button onclick="togglePayment(this, {{ orden.id }})" class="status"
-                                    style="border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 80px; background-color: var(--green); color: white;"
-                                    title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
+                            <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.proveedor|default:"-" }}</td>
+                            <td class="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">{{ orden.fecha|date:"d/m/Y" }}</td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'orden_compra' orden.id %}" 
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors text-decoration-none">
+                                        <i class='bx bxs-file-find text-sm'></i> Ver
+                                    </a>
+                                    <button onclick="deleteOrder({{ orden.id }})" 
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
+                                        <i class='bx bxs-trash text-lg'></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button onclick="togglePayment(this, {{ orden.id }})" 
+                                        class="w-full max-w-[90px] mx-auto py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 bg-emerald-500 text-white shadow-sm shadow-emerald-500/10 hover:opacity-90"
+                                        title="{% if orden.pagado %}Pagado{% else %}Marcar como pagado{% endif %}">
                                     {% if orden.pagado %}
-                                    <i class='bx bx-check'></i>
+                                    <i class='bx bx-check text-base'></i>
                                     {% else %}
                                     Pagado
                                     {% endif %}
@@ -226,7 +227,9 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6">No hay ordenes de papel registradas.</td>
+                            <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500 font-medium">
+                                No hay órdenes de papel registradas.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -245,19 +248,16 @@
 
     function updateContainerHeight() {
         const activeTable = insumosTable.classList.contains('active') ? insumosTable : papelesTable;
-        // Get the height of the active table's content
-        if (activeTable.querySelector('.table-data')) {
-            const height = activeTable.querySelector('.table-data').offsetHeight;
+        if (activeTable.querySelector('.bg-white')) {
+            const height = activeTable.querySelector('.bg-white').offsetHeight;
             container.style.height = height + 'px';
         }
     }
 
-    // Update height on load with delay to ensure CSS is ready
     window.addEventListener('load', () => {
         setTimeout(updateContainerHeight, 300);
     });
 
-    // Update height on resize (responsiveness)
     window.addEventListener('resize', updateContainerHeight);
 
     toggle.addEventListener('change', function () {
@@ -269,7 +269,7 @@
             setTimeout(() => {
                 insumosTable.classList.remove('inactive');
                 insumosTable.classList.add('active');
-                updateContainerHeight(); // Update height for new table
+                updateContainerHeight();
             }, 100);
         } else {
             // Show Papel, Hide Insumos
@@ -279,23 +279,10 @@
             setTimeout(() => {
                 papelesTable.classList.remove('inactive');
                 papelesTable.classList.add('active');
-                updateContainerHeight(); // Update height for new table
+                updateContainerHeight();
             }, 100);
         }
     });
-
-    function toggleSearch(id) {
-        const input = document.getElementById(id);
-        input.classList.toggle('active');
-        if (input.classList.contains('active')) {
-            input.focus();
-        } else {
-            input.value = ''; // Clear search when closed
-            // Trigger keyup to reset table
-            const event = new Event('keyup');
-            input.dispatchEvent(event);
-        }
-    }
 
     function filterTable(tableId, inputId) {
         const input = document.getElementById(inputId);
@@ -304,8 +291,6 @@
         const tr = table.getElementsByTagName("tr");
 
         for (i = 0; i < tr.length; i++) {
-            // Find the Product Name column (marked with class 'search-target')
-            // It is the 2nd column (index 1), but we used a class to be safe.
             const td = tr[i].getElementsByClassName("search-target")[0];
             if (td) {
                 const txtValue = td.textContent || td.innerText;
@@ -316,7 +301,7 @@
                 }
             }
         }
-        updateContainerHeight(); // Update height after filtering
+        updateContainerHeight();
     }
 
     function deleteOrder(id) {
@@ -327,14 +312,14 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 }
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Error al eliminar');
-                    }
-                });
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error al eliminar');
+                }
+            });
         }
     }
 
@@ -345,25 +330,20 @@
                 'X-CSRFToken': '{{ csrf_token }}'
             }
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    if (data.pagado) {
-                        // Changed to Paid -> Show Check
-                        button.innerHTML = "<i class='bx bx-check'></i>";
-                        button.title = "Pagado";
-                    } else {
-                        // Changed to Unpaid -> Show Text
-                        button.innerHTML = "Pagado";
-                        button.title = "Marcar como pagado";
-                    }
-                    // Always green as requested
-                    button.style.backgroundColor = 'var(--green)';
-                    button.style.color = '#fff';
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (data.pagado) {
+                    button.innerHTML = "<i class='bx bx-check text-base'></i>";
+                    button.title = "Pagado";
                 } else {
-                    alert('Error al actualizar estado');
+                    button.innerHTML = "Pagado";
+                    button.title = "Marcar como pagado";
                 }
-            });
+            } else {
+                alert('Error al actualizar estado');
+            }
+        });
     }
 </script>
 

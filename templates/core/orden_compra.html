@@ -4,6 +4,12 @@
 
 {% block content %}
 <style>
+    :root {
+        --blue: #3C91E6;
+        --light-blue: #CFE8FF;
+        --dark: #342E37;
+        --grey: #eee;
+    }
     /* Specific styles for invoice to ensure printabilty and modern look */
     .invoice-container {
         background: white;
@@ -144,7 +150,6 @@
     }
 
     @media print {
-
         /* Hide everything by default, then show invoice */
         #sidebar,
         nav,
@@ -153,12 +158,15 @@
         }
 
         body,
-        #content {
+        #content,
+        main {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
+            max-width: none !important;
             left: 0 !important;
+            box-shadow: none !important;
         }
 
         .invoice-container {
@@ -168,6 +176,8 @@
             padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
+            background: white !important;
+            color: black !important;
         }
 
         /* Force table borders for printing */
@@ -178,6 +188,7 @@
         }
 
         .invoice-table th {
+            background-color: #eee !important;
             color: #000 !important;
             /* Force black text for headers */
             font-weight: bold !important;
