@@ -4,19 +4,29 @@
 
 {% block content %}
 <!-- External CSS for Premium Design -->
-<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/compra_papel.css' %}?v=6.0">
 <link rel="stylesheet" href="{% static 'css/cyber-toggle.css' %}?v=1.5">
 
 <div class="content-container">
-    <div class="head-title">
+    <div class="head-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div class="left">
             <h1>Compra de Papel</h1>
+        </div>
+        <div class="cart-buttons-container" style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" class="btn-add-cart" id="add-to-cart-btn" onclick="addToCart()">
+                <i class='bx bx-plus-circle' style="font-size: 1.2rem;"></i>
+                Agregar al Carrito
+            </button>
+            <button type="button" class="btn-view-cart" id="view-cart-btn" onclick="toggleCartMenu()">
+                <i class='bx bx-shopping-bag'></i>
+                <span id="cart-badge" style="display: none;">0</span>
+            </button>
         </div>
     </div>
 
     <!-- 1. DETALLES DEL PAPEL -->
     <form class="insumo-form" id="paper-details-form">
-        <div class="grid-container" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="grid-container" style="grid-template-columns: repeat(5, 1fr);">
             <div class="card-input">
                 <label>Papel</label>
                 <div class="input-box">
@@ -38,23 +48,30 @@
                 </div>
             </div>
             <div class="card-input">
+                <label>Cantidad (Todo)</label>
+                <div class="input-box">
+                    <input type="number" id="default-qty" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="card-input">
                 <label>Peso Resma (kg)</label>
-                <div class="input-box" style="background: var(--light-orange);">
+                <div class="input-box ream-weight-box">
                     <input type="text" id="ream-weight" placeholder="0.00" readonly style="font-weight: bold;">
                 </div>
             </div>
-            <div class="card-input full-width">
+            <div class="card-input" style="grid-column: span 4;">
                 <label>Observaciones</label>
                 <div class="input-box">
-                    <textarea id="observations" placeholder="Detalles adicionales..."></textarea>
+                    <input type="text" id="observations" placeholder="Detalles adicionales...">
                 </div>
             </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="button" class="btn-confirm" onclick="revealTable()" style="width: 100%; justify-content: center; height: 44px; margin-bottom: 0; float: none; border-radius: 10px;">
+                    Siguiente
+                    <i class='bx bx-chevron-down'></i>
+                </button>
+            </div>
         </div>
-
-        <button type="button" class="btn-confirm" onclick="revealTable()">
-            Siguiente
-            <i class='bx bx-chevron-down'></i>
-        </button>
     </form>
 
     <!-- 2. TABLA DE PROVEEDORES -->
@@ -89,6 +106,18 @@
         </div>
     </div>
 </div>
+
+<!-- CART DRAWER & OVERLAY -->
+<div id="cart-drawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+        <h3><i class='bx bx-shopping-bag'></i> Borradores Guardados</h3>
+        <button onclick="toggleCartMenu()" class="btn-close-cart">&times;</button>
+    </div>
+    <div class="cart-drawer-body" id="cart-items-container">
+        <!-- Cart items dynamically rendered here -->
+    </div>
+</div>
+<div id="cart-overlay" class="cart-overlay" onclick="toggleCartMenu()"></div>
 
 <!-- POPUPS -->
 <div id="confirm-popup" class="popup-overlay">
@@ -148,7 +177,7 @@
         return parseFloat(v.replace(',', '.')) || 0;
     }
 
-    // A. CALCULAR PESO RESMA
+    // A. CALCULAR PESO RESMA GENERAL
     function calculateWeight() {
         const w = parseVal('format-w');
         const h = parseVal('format-h');
@@ -165,6 +194,15 @@
         document.getElementById(id).addEventListener('input', calculateWeight);
     });
 
+    // Sincronizar cantidad por defecto con todas las filas
+    document.getElementById('default-qty').addEventListener('input', function() {
+        const qtyVal = parseInt(this.value) || 1;
+        document.querySelectorAll('#supplier-rows .qty-input').forEach(input => {
+            input.value = qtyVal;
+            updateRowCalculation({ target: input });
+        });
+    });
+
     // B. GENERAR TABLA (PREMIUM DESIGN + CYBER TOGGLE REMADE)
     function revealTable() {
         calculateWeight();
@@ -172,6 +210,11 @@
 
         const tbody = document.getElementById('supplier-rows');
         tbody.innerHTML = '';
+
+        const defaultQtyVal = parseInt(document.getElementById('default-qty').value) || 1;
+        const w = parseVal('format-w');
+        const h = parseVal('format-h');
+        const g = parseVal('grammage');
 
         suppliers.forEach((name, index) => {
             const tr = document.createElement('tr');
@@ -184,7 +227,18 @@
                         <span>${name}</span>
                     </div>
                 </td>
-                <td><span class="badge-weight">${formatter.format(rawReamWeight)} kg</span></td>
+                <td>
+                    <div class="row-spec-container">
+                        <span class="badge-weight">${formatter.format(rawReamWeight)} kg</span>
+                        <div class="spec-edit-group">
+                            <input type="number" class="spec-w-input row-spec-input" value="${w}" title="Ancho">
+                            <span style="font-size: 0.7rem; color: #999;">x</span>
+                            <input type="number" class="spec-h-input row-spec-input" value="${h}" title="Alto">
+                            <span style="font-size: 0.7rem; color: #999;">g</span>
+                            <input type="number" class="spec-g-input row-spec-input" value="${g}" title="Gramaje">
+                        </div>
+                    </div>
+                </td>
                 
                 <td>
                     <div class="input-group-modern">
@@ -233,7 +287,7 @@
                 
                 <td class="text-center">
                     <div class="qty-control">
-                        <input type="number" class="qty-input" value="1" min="1">
+                        <input type="number" class="qty-input" value="${defaultQtyVal}" min="1">
                     </div>
                 </td>
                 
@@ -260,22 +314,28 @@
         }, 100);
     }
 
-    // C. CÁLCULO (USER REQUESTED LOGIC KEPT INTACT)
+    // C. CÁLCULO (ROW SPECIFIC VALUES)
     function updateRowCalculation(e) {
         const row = e.target.closest('tr');
         if (!row) return;
 
-        // A. LEER VALORES
+        // A. LEER VALORES DE FILA
         const priceInputVal = parseFloat(row.querySelector('.price-input').value) || 0;
         const isDolar = row.querySelector('.dolar-toggle').checked;
         const qty = parseInt(row.querySelector('.qty-input').value) || 1;
-        const weight = rawReamWeight;
+
+        // Leer especificaciones de papel individuales de la fila
+        const w = parseFloat(row.querySelector('.spec-w-input').value) || 0;
+        const h = parseFloat(row.querySelector('.spec-h-input').value) || 0;
+        const g = parseFloat(row.querySelector('.spec-g-input').value) || 0;
+
+        // Calcular peso de resma individual para esta fila
+        const weight = (w * h * g) / 20000;
 
         // B. CALCULAR PRECIO REAL POR KILO (EN PESOS)
         let finalPricePerKg = priceInputVal;
 
         if (isDolar) {
-            // SI ES DOLAR: Multiplicamos el valor ingresado (ej: 100) por la cotización (ej: 1020)
             finalPricePerKg = priceInputVal * dolarRate;
         }
 
@@ -287,17 +347,18 @@
 
         // --- VISUALIZACIÓN ---
 
-        // 1. Símbolo de moneda en el input (solo visual)
+        // Actualizar el peso de la fila en pantalla
+        row.querySelector('.badge-weight').innerText = formatter.format(weight) + ' kg';
+
+        // Símbolo de moneda en el input
         row.querySelector('.currency-symbol').innerText = isDolar ? 'u$d' : '$';
 
-        // 2. Precio Unitario (Siempre mostramos la conversión a pesos para referencia)
+        // Precio Unitario (Conversión a pesos)
         row.querySelector('.row-ream-price').innerText = '$ ' + formatter.format(reamUnitPrice);
 
-        // 3. Total Final (Con puntos de miles)
+        // Total Final
         const totalSpan = row.querySelector('.row-total-final');
         totalSpan.innerText = '$ ' + formatter.format(totalFinal);
-
-        // Estilo extra para destacar total
         totalSpan.style.color = 'var(--blue)';
 
         // Styling extra para moneda
@@ -334,15 +395,14 @@
         document.getElementById('popup-message').innerText = `¿Confirmar compra a ${supplierName} por $ ${formatter.format(total)}?`;
         document.getElementById('confirm-popup').classList.add('active');
 
-        // Guardar datos temporales para el envío
+        // Guardar datos temporales para el envío usando los valores individuales de la fila
         const qty = row.querySelector('.qty-input').value;
         const type = document.getElementById('paper-type').value;
-        const w = document.getElementById('format-w').value;
-        const h = document.getElementById('format-h').value;
-        const g = document.getElementById('grammage').value;
+        const w = row.querySelector('.spec-w-input').value;
+        const h = row.querySelector('.spec-h-input').value;
+        const g = row.querySelector('.spec-g-input').value;
 
         // FORMATO EXACTO PARA REGEX BACKEND: Papel [Tipo] [Ancho]x[Alto] [Gram]gr (x[Cant])
-        // Regex: r"Papel (.+) (\d+)x(\d+) (\d+)gr \(x(\d+)\)"
         window.tempPurchaseData = {
             proveedor: supplierName,
             total: total,
@@ -381,5 +441,134 @@
             }
         });
     }
+
+    // --- LÓGICA DEL CARRITO DE BORRADORES ---
+
+    function toggleCartMenu() {
+        document.getElementById('cart-drawer').classList.toggle('active');
+        document.getElementById('cart-overlay').classList.toggle('active');
+    }
+
+    function addToCart() {
+        const type = document.getElementById('paper-type').value.trim();
+        const w = document.getElementById('format-w').value;
+        const h = document.getElementById('format-h').value;
+        const g = document.getElementById('grammage').value;
+        const qty = document.getElementById('default-qty').value;
+        const obs = document.getElementById('observations').value.trim();
+
+        if (!type || !w || !h || !g) {
+            alert('Por favor complete todos los datos del papel (Papel, Formato y Gramaje) antes de agregar al carrito.');
+            return;
+        }
+
+        const cartItem = {
+            id: 'draft_' + Date.now(),
+            type: type,
+            w: parseFloat(w),
+            h: parseFloat(h),
+            g: parseFloat(g),
+            qty: parseInt(qty) || 1,
+            obs: obs,
+            timestamp: new Date().toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+        };
+
+        let cart = JSON.parse(localStorage.getItem('paper_cart') || '[]');
+        cart.push(cartItem);
+        localStorage.setItem('paper_cart', JSON.stringify(cart));
+
+        updateCartUI();
+
+        // Animación de rebote en el botón de carrito
+        const viewCartBtn = document.getElementById('view-cart-btn');
+        if (viewCartBtn) {
+            viewCartBtn.style.transform = 'scale(1.15)';
+            setTimeout(() => {
+                viewCartBtn.style.transform = 'scale(1)';
+            }, 200);
+        }
+    }
+
+    function deleteCartItem(id, event) {
+        if (event) event.stopPropagation(); // Evitar cargar el borrador al hacer clic en borrar
+        let cart = JSON.parse(localStorage.getItem('paper_cart') || '[]');
+        cart = cart.filter(item => item.id !== id);
+        localStorage.setItem('paper_cart', JSON.stringify(cart));
+        updateCartUI();
+    }
+
+    function loadDraft(id) {
+        let cart = JSON.parse(localStorage.getItem('paper_cart') || '[]');
+        const draft = cart.find(item => item.id === id);
+        if (!draft) return;
+
+        document.getElementById('paper-type').value = draft.type;
+        document.getElementById('format-w').value = draft.w;
+        document.getElementById('format-h').value = draft.h;
+        document.getElementById('grammage').value = draft.g;
+        document.getElementById('default-qty').value = draft.qty;
+        document.getElementById('observations').value = draft.obs || '';
+
+        // Calcular y mostrar tabla
+        revealTable();
+
+        // Cerrar menú
+        toggleCartMenu();
+    }
+
+    function updateCartUI() {
+        const cart = JSON.parse(localStorage.getItem('paper_cart') || '[]');
+        const badge = document.getElementById('cart-badge');
+        const container = document.getElementById('cart-items-container');
+
+        // Badge
+        if (cart.length > 0) {
+            badge.innerText = cart.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        // Items
+        if (cart.length === 0) {
+            container.innerHTML = `
+                <div class="cart-empty-message">
+                    <i class='bx bx-shopping-bag'></i>
+                    <p style="font-weight: 600; margin: 0;">No hay borradores guardados</p>
+                    <p style="font-size: 0.8rem; color: #adb5bd; margin: 0;">Agrega tu orden actual con el botón "Agregar al Carrito"</p>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '';
+            // Render de más nuevo a más viejo
+            cart.slice().reverse().forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'cart-item-card';
+                card.onclick = () => loadDraft(item.id);
+
+                card.innerHTML = `
+                    <button class="btn-delete-cart-item" onclick="deleteCartItem('${item.id}', event)" title="Eliminar borrador">
+                        <i class='bx bx-trash'></i>
+                    </button>
+                    <div class="cart-item-title">${item.type}</div>
+                    <div class="cart-item-specs">
+                        <span class="cart-item-spec-badge">${item.w} x ${item.h} cm</span>
+                        <span class="cart-item-spec-badge">${item.g} gr</span>
+                        <span class="cart-item-spec-badge">x${item.qty} u</span>
+                    </div>
+                    ${item.obs ? `<div class="cart-item-obs" title="${item.obs}">${item.obs}</div>` : ''}
+                    <div class="cart-item-footer">
+                        <span>${item.timestamp}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    }
+
+    // Inicializar UI al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCartUI();
+    });
 </script>
 {% endblock %}
